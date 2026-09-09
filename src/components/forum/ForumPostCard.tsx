@@ -8,7 +8,7 @@ export function ForumPostCard({ post }: { post: ForumPost }) {
         <Link
             href={`/forum/${post.id}`}
             prefetch={false}
-            className="block rounded-xl border border-border bg-void-2 p-4 transition-colors hover:border-amber-border"
+            className="block rounded-xl border border-border bg-void-2 p-4 transition-colors hover:border-amber-border hover:bg-void-3"
         >
             <div className="mb-2 flex flex-wrap items-center gap-1.5">
                 {post.is_pinned && <Badge tone="amber">📌 Ghim</Badge>}

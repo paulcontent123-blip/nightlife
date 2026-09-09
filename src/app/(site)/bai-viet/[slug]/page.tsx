@@ -9,7 +9,8 @@ import { createSiteUrl } from "@/config/site";
 import type { ArticleDetail } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { MarkdownContent } from "@/components/articles/MarkdownContent";
+import { extractMarkdownHeadings, MarkdownContent } from "@/components/articles/MarkdownContent";
+import { ArticleTableOfContents } from "@/components/articles/ArticleTableOfContents";
 import { RelatedArticles } from "@/components/articles/RelatedArticles";
 import { ARTICLE_CATEGORY_LABEL } from "@/lib/format";
 
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
         if (!article) {
             return {
-                title: "BÃ i viáº¿t khÃ´ng tá»“n táº¡i Â· Nightlife.vn",
+                title: "Bài viết không tồn tại · Nightlife.vn",
             };
         }
 
@@ -78,13 +79,15 @@ export default async function ArticleDetailPage({ params }: PageProps) {
         notFound();
     }
 
+    const headings = extractMarkdownHeadings(article.content);
+
     return (
-        <article className="mx-auto max-w-4xl px-5 py-16 sm:px-10">
+        <article className="mx-auto max-w-6xl px-5 py-16 sm:px-10">
             <Link href="/bai-viet" className="text-sm font-semibold text-muted hover:text-amber">
                 ← Quay lại danh sách bài viết
             </Link>
 
-            <header className="mt-6">
+            <header className="mt-6 max-w-4xl">
                 <div className="mb-4 flex flex-wrap gap-2">
                     <Badge tone="amber">{ARTICLE_CATEGORY_LABEL[article.category] ?? article.category}</Badge>
                     {article.city && <Badge tone="cyan">{article.city}</Badge>}
@@ -110,13 +113,26 @@ export default async function ArticleDetailPage({ params }: PageProps) {
                 <img
                     src={article.seo.og_image_url}
                     alt={article.title}
-                    className="mt-8 aspect-[16/9] w-full rounded-xl border border-border object-cover"
+                    className="mt-8 aspect-[16/9] w-full max-w-4xl rounded-lg border border-border object-cover"
                 />
             )}
 
-            <Card className="mt-8 p-5 sm:p-8">
-                <MarkdownContent content={article.content} />
-            </Card>
+            {headings.length > 0 && (
+                <div className="mt-8 lg:hidden">
+                    <ArticleTableOfContents headings={headings} collapsible />
+                </div>
+            )}
+
+            <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_240px]">
+                <Card className="min-w-0 p-5 sm:p-8">
+                    <MarkdownContent content={article.content} />
+                </Card>
+                {headings.length > 0 && (
+                    <aside className="sticky top-24 hidden max-h-[calc(100vh-8rem)] overflow-y-auto border-l border-border pl-5 lg:block">
+                        <ArticleTableOfContents headings={headings} />
+                    </aside>
+                )}
+            </div>
 
             {article.tags.length > 0 && (
                 <div className="mt-6 flex flex-wrap gap-2">
@@ -130,9 +146,13 @@ export default async function ArticleDetailPage({ params }: PageProps) {
 
             {/* Streamed separately so the article body renders immediately instead
                 of waiting on the related-articles query, which genuinely depends
-                on this article's category and can't be fetched in parallel. */}
+                on this article's data and can't be fetched in parallel. */}
             <Suspense fallback={<RelatedArticlesSkeleton />}>
-                <RelatedArticles category={article.category} excludeSlug={article.slug} />
+                <RelatedArticles
+                    articleId={article.id}
+                    category={article.category}
+                    relatedArticleIds={article.related_article_ids}
+                />
             </Suspense>
 
             {article.structured_data && (

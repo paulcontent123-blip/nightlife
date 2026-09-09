@@ -627,6 +627,7 @@ export interface ArticleListItem {
 export interface ArticleDetail extends ArticleListItem {
     content: string;
     structured_data?: Record<string, unknown>;
+    related_article_ids: string[];
 }
 
 export interface ArticleImageUploadResult {

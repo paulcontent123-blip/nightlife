@@ -96,10 +96,11 @@ export class AuthService {
 
     async logout(): Promise<{ success: true }> {
         const supabase = await createClient();
-        const { data } = await supabase.auth.getUser();
+        const { data } = await supabase.auth.getClaims();
+        const userId = data?.claims.sub;
 
-        if (data.user) {
-            this.cache.deleteUser(data.user.id);
+        if (userId) {
+            this.cache.deleteUser(userId);
         }
 
         const { error } = await supabase.auth.signOut();
@@ -138,22 +139,37 @@ export class AuthService {
         }
 
         const supabase = await createClient();
-        const { data, error } = await supabase.auth.getUser();
+        const { data, error } = await supabase.auth.getClaims();
+        const userId = data?.claims.sub;
 
-        if (error || !data.user) {
+        if (error || !userId) {
             throw new AuthException(401, "UNAUTHORIZED");
         }
 
-        const cachedUser = this.cache.getUser(data.user.id);
+        const cachedUser = this.cache.getUser(userId);
 
         if (cachedUser) {
             return cachedUser;
         }
 
-        const profile = await this.ensureProfile(data.user);
-        this.cache.setUser(profile);
+        const profile = await this.repository.findById(userId);
 
-        return profile;
+        if (profile) {
+            this.cache.setUser(profile);
+            return profile;
+        }
+
+        // Profile recovery still needs the current email and OAuth metadata.
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !userData.user || userData.user.id !== userId) {
+            throw new AuthException(401, "UNAUTHORIZED");
+        }
+
+        const recoveredProfile = await this.createProfileFromAuthUser(userData.user);
+        this.cache.setUser(recoveredProfile);
+
+        return recoveredProfile;
     }
 
     async updateProfile(input: UpdateProfileDTO, avatar?: File): Promise<UserProfile> {
@@ -253,6 +269,10 @@ export class AuthService {
             return profile;
         }
 
+        return this.createProfileFromAuthUser(user);
+    }
+
+    private async createProfileFromAuthUser(user: User): Promise<UserProfile> {
         if (!user.email) {
             throw new AuthException(404, "USER_NOT_FOUND");
         }

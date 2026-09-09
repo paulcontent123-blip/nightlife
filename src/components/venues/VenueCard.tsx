@@ -11,7 +11,7 @@ export function VenueCard({ venue, priority = false }: { venue: VenueListItem; p
         <Link
             href={`/venues/${venue.slug}`}
             prefetch={false}
-            className="group block overflow-hidden rounded-xl border border-border bg-void-2 shadow-[0_4px_28px_rgba(0,0,0,.5)] transition-all hover:-translate-y-1 hover:border-amber-border hover:shadow-[0_12px_52px_rgba(0,0,0,.6)]"
+            className="group block overflow-hidden rounded-xl border border-border bg-void-2 shadow-[0_4px_28px_rgba(0,0,0,.5)] transition-all hover:-translate-y-1 hover:border-amber-border hover:bg-void-3 hover:shadow-[0_12px_52px_rgba(0,0,0,.6)]"
         >
             <div className="relative flex h-40 items-center justify-center overflow-hidden bg-gradient-to-br from-void-3 to-void-4 text-5xl">
                 {thumbnailUrl ? (

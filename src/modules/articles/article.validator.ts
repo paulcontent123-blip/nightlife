@@ -30,6 +30,7 @@ export const CreateArticleSchema = z.object({
     status: ArticleStatusSchema.default("draft"),
     is_featured: z.boolean().default(false),
     published_at: z.string().datetime().nullable().optional(),
+    related_article_ids: z.array(z.string().uuid()).max(6).default([]),
 });
 
 export const UpdateArticleSchema = CreateArticleSchema.partial();

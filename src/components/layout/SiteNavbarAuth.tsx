@@ -68,7 +68,7 @@ export function SiteNavbarAuth() {
                         prefetch={false}
                         className="hidden rounded-lg px-3.5 py-1.5 text-[13px] font-medium text-amber transition-colors hover:bg-amber-wash md:inline-flex"
                     >
-                        Admin
+                        Quản trị
                     </Link>
                 )}
                 <UserMenu displayName={user.display_name} />
@@ -83,7 +83,7 @@ export function SiteNavbarAuth() {
                 prefetch={false}
                 className="rounded-lg border-[1.5px] border-transparent px-3.5 py-1.5 font-display text-[13px] font-bold text-muted transition-colors hover:border-border-heavy hover:text-white"
             >
-                Dang nhap
+                Đăng nhập
             </Link>
             <Link
                 href="/membership"
@@ -97,7 +97,7 @@ export function SiteNavbarAuth() {
                 prefetch={false}
                 className="rounded-lg bg-amber px-4 py-1.5 font-display text-[13px] font-bold text-void shadow-[0_2px_16px_rgba(240,160,48,.35)] transition-all hover:-translate-y-0.5 hover:bg-amber-2 hover:shadow-[0_4px_24px_rgba(240,160,48,.5)]"
             >
-                Dat ban ngay
+                Đặt bàn ngay
             </Link>
         </div>
     );

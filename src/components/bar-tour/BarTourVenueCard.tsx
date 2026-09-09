@@ -8,7 +8,7 @@ export function BarTourVenueCard({ suggestion }: { suggestion: BarTourVenueSugge
         <Link
             href={`/venues/${suggestion.slug}`}
             prefetch={false}
-            className="block rounded-xl border border-border bg-void-2 p-4 transition-colors hover:border-amber-border"
+            className="block rounded-xl border border-border bg-void-2 p-4 transition-colors hover:border-amber-border hover:bg-void-3"
         >
             <div className="mb-2 flex items-start justify-between gap-2">
                 <div>

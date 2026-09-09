@@ -26,6 +26,7 @@ export function mapArticle(row: ArticleRow) {
         published_at: row.published_at,
         created_at: row.created_at,
         updated_at: row.updated_at,
+        related_article_ids: row.related_article_ids ?? [],
     };
 }
 

@@ -9,7 +9,7 @@ export function EventCard({ event }: { event: Event }) {
         <Link
             href={`/events/${event.slug}`}
             prefetch={false}
-            className="flex overflow-hidden rounded-xl border border-border bg-void-3 shadow-[0_4px_28px_rgba(0,0,0,.5)] transition-all hover:-translate-y-1 hover:border-amber-border"
+            className="flex overflow-hidden rounded-xl border border-border bg-void-3 shadow-[0_4px_28px_rgba(0,0,0,.5)] transition-all hover:-translate-y-1 hover:border-amber-border hover:bg-void-4"
         >
             <div className="flex w-[70px] shrink-0 flex-col items-center justify-center border-r border-border py-3.5">
                 <span className="font-display text-2xl font-extrabold leading-none text-amber">{day}</span>

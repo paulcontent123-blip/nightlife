@@ -1,15 +1,21 @@
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";
 import { SiteNavbarAuth } from "./SiteNavbarAuth";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const NAV_LINKS = [
-    { href: "/", label: "Kham pha" },
-    { href: "/venues", label: "Dia diem" },
-    { href: "/events", label: "Su kien" },
-    { href: "/happy-hour", label: "Happy Hour" },
-    { href: "/bai-viet", label: "Bai viet" },
-    { href: "/forum", label: "Cong dong" },
-    { href: "/bar-tour", label: "Bar Tour" },
+    { href: "/", label: "Trang chủ" },
+    { href: "/venues", label: "Địa điểm" },
+    {
+        label: "Sự kiện",
+        children: [
+            { href: "/events", label: "Sự kiện hiện tại" },
+            { href: "/happy-hour", label: "Happy Hour" },
+            { href: "/bar-tour", label: "Bar Tour" },
+        ],
+    },
+    { href: "/forum", label: "Cộng đồng" },
+    { href: "/bai-viet", label: "Bài viết" },
 ];
 
 export function SiteNavbar() {
@@ -26,7 +32,10 @@ export function SiteNavbar() {
                 <NavLinks links={NAV_LINKS} />
             </div>
 
-            <SiteNavbarAuth />
+            <div className="flex items-center gap-2.5">
+                <ThemeToggle />
+                <SiteNavbarAuth />
+            </div>
         </nav>
     );
 }

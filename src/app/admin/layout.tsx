@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/modules/auth/auth.guard";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { LogoutButton } from "@/components/layout/LogoutButton";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
     let displayName = "Admin";
@@ -24,6 +25,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                         <span className="hidden text-[13px] text-muted sm:inline">
                             Xin chào, <span className="text-white">{displayName}</span>
                         </span>
+                        <ThemeToggle />
                         <LogoutButton />
                     </div>
                 </header>

@@ -1,40 +1,101 @@
 @import "tailwindcss";
 
+/* Dark palette (default — no [data-theme] attribute needed) */
 :root {
-  --background: #06060a;
-  --foreground: #ffffff;
+  --void: #06060a;
+  --void-2: #0d0d14;
+  --void-3: #13131e;
+  --void-4: #1a1a28;
+  --void-5: #222235;
+
+  --amber: #f0a030;
+  --amber-2: #f5b84a;
+  --amber-3: #fad080;
+
+  --pink: #e0406a;
+  --cyan: #40d4c8;
+
+  --offwhite: #f0eee8;
+  --muted: #888899;
+  --muted-2: #57576a;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-heavy: rgba(255, 255, 255, 0.24);
+  --amber-border: rgba(240, 160, 48, 0.28);
+  --amber-wash: rgba(240, 160, 48, 0.12);
+  --pink-wash: rgba(224, 64, 106, 0.1);
+  --cyan-wash: rgba(64, 212, 200, 0.1);
+
+  --white: #ffffff;
+  --background: var(--void);
+  --foreground: var(--white);
+}
+
+/* Light palette — activated by data-theme="light" on <html>, set by the
+   theme toggle (see ThemeToggle.tsx) and the anti-flash script in layout.tsx. */
+[data-theme="light"] {
+  --void: #f6f5f1;
+  --void-2: #ffffff;
+  --void-3: #edebe4;
+  --void-4: #e1ded3;
+  --void-5: #d1cdbe;
+
+  --amber: #b8710f;
+  --amber-2: #9c5f0b;
+  --amber-3: #7d4b08;
+
+  --pink: #c0245a;
+  --cyan: #0d8c80;
+
+  --offwhite: #1a1a1a;
+  --muted: #55555f;
+  --muted-2: #6f6f7d;
+
+  --border: rgba(0, 0, 0, 0.09);
+  --border-strong: rgba(0, 0, 0, 0.15);
+  --border-heavy: rgba(0, 0, 0, 0.24);
+  --amber-border: rgba(184, 113, 15, 0.35);
+  --amber-wash: rgba(184, 113, 15, 0.1);
+  --pink-wash: rgba(192, 36, 90, 0.09);
+  --cyan-wash: rgba(13, 140, 128, 0.09);
+
+  --white: #16161c;
+  --background: var(--void);
+  --foreground: var(--white);
 }
 
 @theme inline {
-  --color-void: #06060a;
-  --color-void-2: #0d0d14;
-  --color-void-3: #13131e;
-  --color-void-4: #1a1a28;
-  --color-void-5: #222235;
+  --color-void: var(--void);
+  --color-void-2: var(--void-2);
+  --color-void-3: var(--void-3);
+  --color-void-4: var(--void-4);
+  --color-void-5: var(--void-5);
 
-  --color-amber: #f0a030;
-  --color-amber-2: #f5b84a;
-  --color-amber-3: #fad080;
+  --color-amber: var(--amber);
+  --color-amber-2: var(--amber-2);
+  --color-amber-3: var(--amber-3);
 
-  --color-pink: #e0406a;
-  --color-cyan: #40d4c8;
+  --color-pink: var(--pink);
+  --color-cyan: var(--cyan);
 
-  --color-offwhite: #f0eee8;
-  --color-muted: #888899;
-  --color-muted-2: #444455;
+  --color-offwhite: var(--offwhite);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
 
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
-  --color-border-heavy: rgba(255, 255, 255, 0.24);
-  --color-amber-border: rgba(240, 160, 48, 0.28);
-  --color-amber-wash: rgba(240, 160, 48, 0.12);
-  --color-pink-wash: rgba(224, 64, 106, 0.1);
-  --color-cyan-wash: rgba(64, 212, 200, 0.1);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-heavy: var(--border-heavy);
+  --color-amber-border: var(--amber-border);
+  --color-amber-wash: var(--amber-wash);
+  --color-pink-wash: var(--pink-wash);
+  --color-cyan-wash: var(--cyan-wash);
 
+  --color-white: var(--white);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -50,6 +111,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 ::-webkit-scrollbar {

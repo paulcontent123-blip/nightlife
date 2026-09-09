@@ -96,6 +96,34 @@ export class ArticleRepository {
         return data ? mapArticle(data) : null;
     }
 
+    // Fetches published articles by id, preserving the order of the ids
+    // array (the admin's chosen order), not the database's default order.
+    async listPublicByIds(ids: string[]) {
+        if (ids.length === 0) {
+            return [];
+        }
+
+        const { data, error } = await this.supabase
+            .from(ARTICLES_TABLE)
+            .select(ARTICLE_LIST_COLUMNS)
+            .in("id", ids)
+            .eq("status", "published")
+            .not("published_at", "is", null)
+            .lte("published_at", new Date().toISOString())
+            .returns<ArticleListRow[]>();
+
+        if (error) {
+            throw new AuthException(500, "DATABASE_ERROR", error.message);
+        }
+
+        const rowsById = new Map((data ?? []).map((row) => [row.id, row]));
+
+        return ids
+            .map((id) => rowsById.get(id))
+            .filter((row): row is ArticleListRow => Boolean(row))
+            .map(mapArticleListItem);
+    }
+
     async findAdminById(id: string) {
         const { data, error } = await this.supabase
             .from(ARTICLES_TABLE)

@@ -5,15 +5,30 @@ import { ArticleCard } from "@/components/articles/ArticleCard";
 
 const articleListService = new ArticleListService();
 
-export async function RelatedArticles({ category, excludeSlug }: { category: string; excludeSlug: string }) {
+interface RelatedArticlesProps {
+    articleId: string;
+    category: string;
+    relatedArticleIds: string[];
+}
+
+export async function RelatedArticles({ articleId, category, relatedArticleIds }: RelatedArticlesProps) {
     let items: ArticleListItem[] = [];
 
     try {
-        const result = await articleListService.listPublicArticles(
-            new URLSearchParams({ category, limit: "4" })
-        );
+        // Admin-curated picks take priority; only fall back to an automatic
+        // same-category suggestion when nothing has been picked (or the picks
+        // no longer resolve — e.g. an article got unpublished since).
+        if (relatedArticleIds.length > 0) {
+            items = await articleListService.listPublicArticlesByIds(relatedArticleIds);
+        }
 
-        items = result.items.filter((article) => article.slug !== excludeSlug).slice(0, 3);
+        if (items.length === 0) {
+            const result = await articleListService.listPublicArticles(
+                new URLSearchParams({ category, limit: "4" })
+            );
+
+            items = result.items.filter((article) => article.id !== articleId).slice(0, 3);
+        }
     } catch (error) {
         if (!(error instanceof AuthException)) {
             throw error;
@@ -25,8 +40,13 @@ export async function RelatedArticles({ category, excludeSlug }: { category: str
     }
 
     return (
-        <section className="mt-12">
-            <p className="mb-4 font-display text-lg font-extrabold">📚 Bài viết liên quan</p>
+        <section className="mt-12 border-t border-border pt-8">
+            <div className="mb-5 flex items-end justify-between gap-4">
+                <div>
+                    <p className="text-xs font-bold uppercase text-amber">Khám phá thêm</p>
+                    <h2 className="mt-1 font-display text-xl font-extrabold text-white">Bài viết liên quan</h2>
+                </div>
+            </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {items.map((article) => (
                     <ArticleCard key={article.id} article={article} />

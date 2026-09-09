@@ -37,6 +37,7 @@ export interface CreateArticleDTO {
     status?: ArticleStatus;
     is_featured?: boolean;
     published_at?: string | null;
+    related_article_ids?: string[];
 }
 
 export type UpdateArticleDTO = Partial<CreateArticleDTO>;
@@ -64,6 +65,7 @@ export interface ArticleRow {
     published_at: string | null;
     created_at: string;
     updated_at: string;
+    related_article_ids: string[];
 }
 
 // Public article cards do not need the full Markdown body. Keeping this row

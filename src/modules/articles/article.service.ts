@@ -138,6 +138,7 @@ export class ArticleService {
             is_featured: dto.is_featured,
             reading_time_minutes: calculateReadingTime(content),
             published_at: publishedAt,
+            related_article_ids: dto.related_article_ids ?? [],
         });
 
         await incrementArticleListCacheVersion();
@@ -176,6 +177,9 @@ export class ArticleService {
             ...(dto.is_featured !== undefined ? { is_featured: dto.is_featured } : {}),
             ...(dto.published_at !== undefined || dto.status !== undefined
                 ? { published_at: this.resolvePublishedAt(nextStatus, dto.published_at ?? article.published_at) }
+                : {}),
+            ...(dto.related_article_ids !== undefined
+                ? { related_article_ids: dto.related_article_ids.filter((relatedId) => relatedId !== id) }
                 : {}),
         });
 

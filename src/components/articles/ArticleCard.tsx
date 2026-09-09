@@ -10,7 +10,7 @@ export function ArticleCard({ article, priority = false }: { article: ArticleLis
 
     return (
         <Link href={`/bai-viet/${article.slug}`} prefetch={false} className="group block h-full">
-            <Card className="flex h-full flex-col overflow-hidden transition-colors group-hover:border-amber-border">
+            <Card className="flex h-full flex-col overflow-hidden transition-colors group-hover:border-amber-border group-hover:bg-void-3">
                 {imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img

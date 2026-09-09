@@ -57,7 +57,7 @@ const FOOTER_COLUMNS: Array<{ title: string; links: FooterLink[] }> = [
 ];
 
 function FooterLinkItem({ href, label }: FooterLink) {
-    const className = "text-[12.5px] text-white/35 transition-colors hover:text-white";
+    const className = "text-[12.5px] text-muted transition-colors hover:text-white";
 
     if (href === "#") {
         return (
@@ -85,7 +85,7 @@ export function SiteFooter() {
                         <p className="mb-2.5 font-display text-[22px] font-extrabold">
                             <span className="text-amber">Night</span>life.vn
                         </p>
-                        <p className="mb-4 text-[13px] leading-relaxed text-white/35">
+                        <p className="mb-4 text-[13px] leading-relaxed text-muted">
                             Vietnam&apos;s #1 Nightlife Platform — Khám phá 2.800+ bars, clubs và venues đã xác minh tại Việt Nam
                             và Đông Nam Á. Thành viên VEA Group.
                         </p>
@@ -94,7 +94,7 @@ export function SiteFooter() {
                                 <a
                                     key={index}
                                     href="#"
-                                    className="flex h-[34px] w-[34px] items-center justify-center rounded-lg border border-border-strong text-sm text-white/35 transition-colors hover:border-amber-border hover:bg-amber-wash hover:text-amber"
+                                    className="flex h-[34px] w-[34px] items-center justify-center rounded-lg border border-border-strong text-sm text-muted transition-colors hover:border-amber-border hover:bg-amber-wash hover:text-amber"
                                 >
                                     {icon}
                                 </a>
@@ -105,7 +105,7 @@ export function SiteFooter() {
                     <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
                         {FOOTER_COLUMNS.map((column) => (
                             <div key={column.title}>
-                                <p className="mb-3.5 font-display text-[11px] font-bold uppercase tracking-wide text-white/30">
+                                <p className="mb-3.5 font-display text-[11px] font-bold uppercase tracking-wide text-muted-2">
                                     {column.title}
                                 </p>
                                 <ul className="flex flex-col gap-2">
@@ -122,7 +122,7 @@ export function SiteFooter() {
 
                 <div className="mb-5 h-px bg-border" />
 
-                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-white/22">
+                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-2">
                     <p>
                         © 2026 Nightlife.com.vn · Thành viên <span className="text-amber">VEA Group</span> · Vietnam Era Group
                         🇻🇳

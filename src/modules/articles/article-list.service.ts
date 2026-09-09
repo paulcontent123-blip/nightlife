@@ -24,6 +24,12 @@ export class ArticleListService {
         );
     }
 
+    // Admin-curated related articles for a detail page — a small, id-bounded
+    // lookup, so it is not worth the complexity of a cache key over it.
+    async listPublicArticlesByIds(ids: string[]) {
+        return this.repository.listPublicByIds(ids);
+    }
+
     private async getCached(
         key: string,
         load: () => Promise<PublicArticleListResult>
