@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
+import { cache } from "react";
+import { AuthException } from "@/modules/auth/auth.errors";
+import { ForumService } from "@/modules/forums/forum.service";
 import type { ForumPostDetail } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
 import { RepliesSection } from "@/components/forum/RepliesSection";
@@ -13,17 +14,19 @@ interface PageProps {
     params: Promise<{ id: string }>;
 }
 
-async function getPost(id: string): Promise<ForumPostDetail | null> {
+const forumService = new ForumService();
+
+const getPost = cache(async (id: string): Promise<ForumPostDetail | null> => {
     try {
-        return await serverFetch<ForumPostDetail>(`/api/v1/forum/posts/${id}`);
+        return await forumService.getPostDetail(id);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
+        if (error instanceof AuthException && error.status === 404) {
             return null;
         }
 
         throw error;
     }
-}
+});
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { id } = await params;

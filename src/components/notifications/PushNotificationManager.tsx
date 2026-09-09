@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import type { MessagePayload } from "firebase/messaging";
-import { registerPushToken, subscribeForegroundMessages } from "@/lib/firebase/push";
 
 export function PushNotificationManager() {
     const [toast, setToast] = useState<{ title: string; body: string } | null>(null);
@@ -12,22 +11,45 @@ export function PushNotificationManager() {
             return;
         }
 
-        if (Notification.permission === "granted") {
-            registerPushToken().catch(() => {});
-        }
-
+        let active = true;
         let unsubscribe: (() => void) | undefined;
+        const timer = window.setTimeout(() => {
+            import("@/lib/firebase/push")
+                .then(async ({ registerPushToken, subscribeForegroundMessages }) => {
+                    if (!active) {
+                        return;
+                    }
 
-        subscribeForegroundMessages((payload: MessagePayload) => {
-            setToast({
-                title: payload.notification?.title ?? payload.data?.title ?? "Nightlife.vn",
-                body: payload.notification?.body ?? payload.data?.body ?? "",
-            });
-        }).then((unsub) => {
-            unsubscribe = unsub;
-        });
+                    if (Notification.permission === "granted") {
+                        await registerPushToken().catch(() => {});
+                    }
 
-        return () => unsubscribe?.();
+                    if (!active) {
+                        return;
+                    }
+
+                    const nextUnsubscribe = await subscribeForegroundMessages((payload: MessagePayload) => {
+                        setToast({
+                            title: payload.notification?.title ?? payload.data?.title ?? "Nightlife.vn",
+                            body: payload.notification?.body ?? payload.data?.body ?? "",
+                        });
+                    });
+
+                    if (!active) {
+                        nextUnsubscribe();
+                        return;
+                    }
+
+                    unsubscribe = nextUnsubscribe;
+                })
+                .catch(() => {});
+        }, 1500);
+
+        return () => {
+            active = false;
+            window.clearTimeout(timer);
+            unsubscribe?.();
+        };
     }, []);
 
     useEffect(() => {

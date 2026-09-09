@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
+import { AuthException } from "@/modules/auth/auth.errors";
+import { EventListService } from "@/modules/events/event-list.service";
 import type { Event, Paginated } from "@/lib/api/types";
 import { EventCard } from "@/components/events/EventCard";
 import { Pagination } from "@/components/ui/Pagination";
@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 export const metadata: Metadata = { title: "Sự kiện · Nightlife.vn" };
 
 const EMPTY_RESULT: Paginated<Event> = { items: [], pagination: { page: 1, limit: 12, total: 0, total_pages: 0 } };
+const eventListService = new EventListService();
 
 interface PageProps {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -31,9 +32,9 @@ export default async function EventsPage({ searchParams }: PageProps) {
     let loadError = false;
 
     try {
-        result = await serverFetch<Paginated<Event>>(`/api/v1/events?${query.toString()}`);
+        result = await eventListService.listPublicEvents(query);
     } catch (error) {
-        if (error instanceof ApiError) {
+        if (error instanceof AuthException) {
             loadError = true;
         } else {
             throw error;

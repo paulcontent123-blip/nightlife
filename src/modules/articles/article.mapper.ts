@@ -1,4 +1,4 @@
-import type { ArticleRow } from "./article.types";
+import type { ArticleListRow, ArticleRow } from "./article.types";
 
 export function mapArticle(row: ArticleRow) {
     return {
@@ -29,7 +29,7 @@ export function mapArticle(row: ArticleRow) {
     };
 }
 
-export function mapArticleListItem(row: ArticleRow) {
+export function mapArticleListItem(row: ArticleListRow) {
     return {
         id: row.id,
         author_id: row.author_id,

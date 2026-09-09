@@ -8,6 +8,8 @@ type RedisCommandResult = {
     error?: string;
 };
 
+const REDIS_REQUEST_TIMEOUT_MS = 800;
+
 export async function redisJsonGet<T>(key: string): Promise<T | null> {
     const redis = getRedisRestConfig();
 
@@ -23,6 +25,31 @@ export async function redisJsonGet<T>(key: string): Promise<T | null> {
     }
 
     return JSON.parse(value) as T;
+}
+
+// Reads a version counter and a JSON value in a single round trip, so callers
+// that gate a cached value on a separate invalidation counter (e.g. venue list
+// cache versioning) don't pay for two sequential Redis requests per read.
+export async function redisGetVersionAndJson<T>(
+    versionKey: string,
+    jsonKey: string
+): Promise<{ version: number; value: T | null }> {
+    const redis = getRedisRestConfig();
+
+    if (!redis) {
+        return { version: 0, value: null };
+    }
+
+    const [versionResponse, jsonResponse] = await executeRedisPipeline(redis, [
+        ["GET", versionKey],
+        ["GET", jsonKey],
+    ]);
+    const versionValue = versionResponse?.result;
+    const version = Number.isFinite(Number(versionValue)) ? Number(versionValue) : 0;
+    const jsonValue = jsonResponse?.result;
+    const value = typeof jsonValue === "string" ? (JSON.parse(jsonValue) as T) : null;
+
+    return { version, value };
 }
 
 export async function redisJsonSet<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
@@ -131,28 +158,36 @@ async function executeRedisPipeline(
     redis: RedisRestConfig,
     commands: Array<Array<string | number>>
 ): Promise<RedisCommandResult[]> {
-    const response = await fetch(`${redis.url.replace(/\/$/, "")}/pipeline`, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${redis.token}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(commands),
-        cache: "no-store",
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REDIS_REQUEST_TIMEOUT_MS);
 
-    if (!response.ok) {
-        throw new Error(`Redis cache request failed with status ${response.status}`);
+    try {
+        const response = await fetch(`${redis.url.replace(/\/$/, "")}/pipeline`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${redis.token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(commands),
+            cache: "no-store",
+            signal: controller.signal,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Redis cache request failed with status ${response.status}`);
+        }
+
+        const body = await response.json() as RedisCommandResult[];
+        const failedCommand = body.find((item) => item.error);
+
+        if (failedCommand?.error) {
+            throw new Error(failedCommand.error);
+        }
+
+        return body;
+    } finally {
+        clearTimeout(timeout);
     }
-
-    const body = await response.json() as RedisCommandResult[];
-    const failedCommand = body.find((item) => item.error);
-
-    if (failedCommand?.error) {
-        throw new Error(failedCommand.error);
-    }
-
-    return body;
 }
 
 function getRedisRestConfig(): RedisRestConfig | null {

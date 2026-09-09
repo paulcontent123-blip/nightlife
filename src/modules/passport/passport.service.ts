@@ -1,6 +1,5 @@
 import { AuthException } from "@/modules/auth/auth.errors";
 import type { UserProfile } from "@/modules/auth/auth.types";
-import { NotificationJobService } from "@/modules/notifications/jobs/notification-job.service";
 import { PASSPORT_POINTS, PASSPORT_REWARDS } from "./passport.constants";
 import { PassportRepository } from "./passport.repository";
 import {
@@ -15,8 +14,7 @@ import type {
 
 export class PassportService {
     constructor(
-        private repository = new PassportRepository(),
-        private notificationJobService = new NotificationJobService()
+        private repository = new PassportRepository()
     ) { }
 
     async awardVenueCheckinPoints(input: { userId: string; venueId: string; bookingId: string }) {
@@ -193,7 +191,9 @@ export class PassportService {
         before: number;
         after: number;
     }) {
-        const milestones = this.notificationJobService.getPassportMilestonesCrossed({
+        const { NotificationJobService } = await import("@/modules/notifications/jobs/notification-job.service");
+        const notificationJobService = new NotificationJobService();
+        const milestones = notificationJobService.getPassportMilestonesCrossed({
             before: input.before,
             after: input.after,
         });
@@ -206,7 +206,7 @@ export class PassportService {
 
         for (const milestone of milestones) {
             try {
-                results.push(await this.notificationJobService.notifyPassportMilestoneNow({
+                results.push(await notificationJobService.notifyPassportMilestoneNow({
                     userId: input.userId,
                     milestone,
                     balance: input.after,

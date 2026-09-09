@@ -3,16 +3,24 @@ import type { ArticleListItem } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { ARTICLE_CATEGORY_LABEL } from "@/lib/format";
+import { getOptimizedCloudinaryImageUrl } from "@/lib/cloudinary/image-url";
 
-export function ArticleCard({ article }: { article: ArticleListItem }) {
+export function ArticleCard({ article, priority = false }: { article: ArticleListItem; priority?: boolean }) {
+    const imageUrl = getOptimizedCloudinaryImageUrl(article.seo.og_image_url);
+
     return (
-        <Link href={`/bai-viet/${article.slug}`} className="group block h-full">
+        <Link href={`/bai-viet/${article.slug}`} prefetch={false} className="group block h-full">
             <Card className="flex h-full flex-col overflow-hidden transition-colors group-hover:border-amber-border">
-                {article.seo.og_image_url ? (
+                {imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                        src={article.seo.og_image_url}
+                        src={imageUrl}
                         alt={article.title}
+                        width={640}
+                        height={360}
+                        loading={priority ? "eager" : "lazy"}
+                        decoding="async"
+                        fetchPriority={priority ? "high" : "low"}
                         className="h-44 w-full object-cover"
                     />
                 ) : (

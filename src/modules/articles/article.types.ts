@@ -66,4 +66,8 @@ export interface ArticleRow {
     updated_at: string;
 }
 
+// Public article cards do not need the full Markdown body. Keeping this row
+// separate prevents long article content from being read into list requests.
+export type ArticleListRow = Omit<ArticleRow, "content">;
+
 export type ArticleRecord = Omit<ArticleRow, "id" | "view_count" | "created_at" | "updated_at">;

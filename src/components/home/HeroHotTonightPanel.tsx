@@ -69,6 +69,7 @@ export function HeroHotTonightPanel() {
 
             <Link
                 href="/happy-hour"
+                prefetch={false}
                 className="mt-1 block rounded-xl border border-amber-border bg-amber-wash px-4 py-3.5 text-center text-sm font-semibold text-amber transition-colors hover:bg-amber hover:text-void"
             >
                 ⚡ 14 Happy Hour deals đang active tối nay →

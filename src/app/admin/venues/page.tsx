@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { serverFetch } from "@/lib/api/server";
-import type { Paginated, Venue } from "@/lib/api/types";
+import type { Paginated, VenueListItem } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { Pagination } from "@/components/ui/Pagination";
@@ -26,7 +26,7 @@ export default async function AdminVenuesPage({ searchParams }: PageProps) {
     if (city) query.set("city", city);
     if (isActive) query.set("is_active", isActive);
 
-    const result = await serverFetch<Paginated<Venue>>(`/api/v1/admin/venues?${query.toString()}`);
+    const result = await serverFetch<Paginated<VenueListItem>>(`/api/v1/admin/venues?${query.toString()}`);
 
     function buildHref(nextPage: number) {
         const next = new URLSearchParams(query);

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { clientFetch } from "@/lib/api/client";
+import { notifyAuthStateChanged } from "@/lib/auth/auth-events";
 import { Button } from "@/components/ui/Button";
 
 export function LogoutButton() {
@@ -14,6 +15,7 @@ export function LogoutButton() {
 
         try {
             await clientFetch("/api/v1/auth/logout", { method: "POST" });
+            notifyAuthStateChanged();
         } finally {
             router.push("/");
             router.refresh();

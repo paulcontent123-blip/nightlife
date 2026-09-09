@@ -20,17 +20,17 @@ export default async function MembershipPage({ searchParams }: PageProps) {
     const query = await searchParams;
     const paymentResult = typeof query.payment === "string" ? query.payment : undefined;
 
-    const tiers = await serverFetch<MembershipTiersResult>("/api/v1/membership/tiers");
-
-    let mine: MembershipMineResult | null = null;
-
-    try {
-        mine = await serverFetch<MembershipMineResult>("/api/v1/membership/mine");
-    } catch (error) {
-        if (!(error instanceof ApiError) || error.status !== 401) {
-            throw error;
+    // Independent of one another — kick off both requests before awaiting either.
+    const tiersPromise = serverFetch<MembershipTiersResult>("/api/v1/membership/tiers");
+    const minePromise = serverFetch<MembershipMineResult>("/api/v1/membership/mine").catch((error) => {
+        if (error instanceof ApiError && error.status === 401) {
+            return null;
         }
-    }
+
+        throw error;
+    });
+
+    const [tiers, mine] = await Promise.all([tiersPromise, minePromise]);
 
     const pending = mine?.pending_subscription ?? null;
 

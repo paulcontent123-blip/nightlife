@@ -1,12 +1,12 @@
 import { failure, success } from "@/modules/auth/auth.response";
-import { VenueService } from "@/modules/venues/venue.service";
+import { VenueListService } from "@/modules/venues/venue-list.service";
 
-const venueService = new VenueService();
+const venueListService = new VenueListService();
 
 export async function GET(request: Request) {
     try {
         const url = new URL(request.url);
-        const data = await venueService.listPublicVenues(url.searchParams);
+        const data = await venueListService.listPublicVenues(url.searchParams);
 
         return success(data);
     } catch (error) {

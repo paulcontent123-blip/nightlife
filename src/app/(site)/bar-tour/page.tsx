@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
+import { AuthException } from "@/modules/auth/auth.errors";
+import { BarTourService } from "@/modules/bar-tour/bar-tour.service";
 import type { BarTourFoodSuggestion, BarTourRecommendationResult, BarTourVenueSuggestion } from "@/lib/api/types";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -15,6 +15,8 @@ const FILTER_KEYS = ["keyword", "city", "district", "price_range", "party_size"]
 interface PageProps {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
+
+const barTourService = new BarTourService();
 
 export default async function BarTourPage({ searchParams }: PageProps) {
     const params = await searchParams;
@@ -34,9 +36,9 @@ export default async function BarTourPage({ searchParams }: PageProps) {
     let loadError = false;
 
     try {
-        result = await serverFetch<BarTourRecommendationResult>(`/api/v1/bar-tour/recommendations?${query.toString()}`);
+        result = await barTourService.recommendFromSearchParams(query);
     } catch (error) {
-        if (error instanceof ApiError) {
+        if (error instanceof AuthException) {
             loadError = true;
         } else {
             throw error;

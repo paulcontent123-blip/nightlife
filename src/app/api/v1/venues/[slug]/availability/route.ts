@@ -1,6 +1,6 @@
 import { failure, success } from "@/modules/auth/auth.response";
-import { getCurrentUserMembershipPerks } from "@/modules/membership/membership-access";
-import { VenueService } from "@/modules/venues/venue.service";
+import { getCurrentUserAvailabilityPerks } from "@/modules/membership/membership-availability-access";
+import { VenueAvailabilityService } from "@/modules/venues/venue-availability.service";
 
 interface RouteContext {
     params: Promise<{
@@ -8,14 +8,14 @@ interface RouteContext {
     }>;
 }
 
-const venueService = new VenueService();
+const venueAvailabilityService = new VenueAvailabilityService();
 
 export async function GET(request: Request, context: RouteContext) {
     try {
         const { slug } = await context.params;
         const url = new URL(request.url);
-        const perks = await getCurrentUserMembershipPerks();
-        const data = await venueService.getVenueAvailability(
+        const perks = await getCurrentUserAvailabilityPerks();
+        const data = await venueAvailabilityService.getVenueAvailability(
             slug,
             url.searchParams,
             {

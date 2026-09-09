@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { clientFetch } from "@/lib/api/client";
+import { notifyAuthStateChanged } from "@/lib/auth/auth-events";
 
 export function UserMenu({ displayName }: { displayName: string }) {
     const router = useRouter();
@@ -28,6 +29,7 @@ export function UserMenu({ displayName }: { displayName: string }) {
 
         try {
             await clientFetch("/api/v1/auth/logout", { method: "POST" });
+            notifyAuthStateChanged();
         } finally {
             router.push("/");
             router.refresh();
@@ -81,6 +83,7 @@ function MenuLink({ href, children, onNavigate }: { href: string; children: Reac
     return (
         <Link
             href={href}
+            prefetch={false}
             onClick={onNavigate}
             className="block px-3.5 py-2 text-[13px] font-medium text-muted transition-colors hover:bg-white/5 hover:text-white"
         >

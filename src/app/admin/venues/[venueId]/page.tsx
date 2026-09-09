@@ -23,11 +23,14 @@ export default async function EditVenuePage({ params }: PageProps) {
     let events: Event[] = [];
 
     try {
-        venue = await serverFetch<Venue>(`/api/v1/admin/venues/${venueId}`);
-        const [tablesResult, eventsResult] = await Promise.all([
+        // Independent of one another — all three only need venueId, so fetch
+        // them concurrently instead of waiting on venue before starting the rest.
+        const [venueResult, tablesResult, eventsResult] = await Promise.all([
+            serverFetch<Venue>(`/api/v1/admin/venues/${venueId}`),
             serverFetch<Paginated<VenueTable>>(`/api/v1/admin/venues/${venueId}/tables?limit=100`),
             serverFetch<Paginated<Event>>(`/api/v1/admin/venues/${venueId}/events?limit=100`),
         ]);
+        venue = venueResult;
         tables = tablesResult.items;
         events = eventsResult.items;
     } catch (error) {

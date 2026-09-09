@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { serverFetch } from "@/lib/api/server";
-import type { ForumPost, Paginated } from "@/lib/api/types";
+import { ForumListService } from "@/modules/forums/forum-list.service";
 import { ForumPostCard } from "@/components/forum/ForumPostCard";
 import { CreatePostForm } from "@/components/forum/CreatePostForm";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -15,6 +14,8 @@ export const metadata: Metadata = { title: "Cộng đồng · Nightlife.vn" };
 interface PageProps {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
+
+const forumListService = new ForumListService();
 
 export default async function ForumPage({ searchParams }: PageProps) {
     const params = await searchParams;
@@ -31,7 +32,7 @@ export default async function ForumPage({ searchParams }: PageProps) {
     if (tag) query.set("tag", tag);
     if (venueId) query.set("venue_id", venueId);
 
-    const result = await serverFetch<Paginated<ForumPost>>(`/api/v1/forum/posts?${query.toString()}`);
+    const result = await forumListService.listPublicPosts(query);
 
     const persistedParams = { ...(city ? { city } : {}), ...(tag ? { tag } : {}), ...(venueId ? { venue_id: venueId } : {}) };
 

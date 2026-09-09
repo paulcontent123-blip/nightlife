@@ -6,6 +6,23 @@ import type { DealListQuery, DealRecord, DealRow, DealRowWithVenue } from "./dea
 const DEALS_TABLE = "deals";
 const VENUES_TABLE = "venues";
 const PUBLIC_DEAL_FETCH_LIMIT = 5000;
+const PUBLIC_DEAL_COLUMNS = [
+    "id",
+    "venue_id",
+    "title",
+    "description",
+    "discount_type",
+    "discount_value",
+    "applicable_days",
+    "start_time",
+    "end_time",
+    "conditions",
+    "is_exclusive",
+    "is_active",
+    "valid_until",
+    "created_at",
+    "venues!inner(id, name, slug, city, district, is_active)",
+].join(",");
 
 type UpdateDealRecord = Partial<DealRecord>;
 
@@ -60,7 +77,7 @@ export class DealRepository {
         const today = getVietnamDate();
         let request = this.supabase
             .from(DEALS_TABLE)
-            .select("*, venues!inner(id, name, slug, city, district, is_active)", { count: "exact" })
+            .select(PUBLIC_DEAL_COLUMNS)
             .eq("is_active", true)
             .eq("venues.is_active", true)
             .or(`valid_until.is.null,valid_until.gte.${today}`);

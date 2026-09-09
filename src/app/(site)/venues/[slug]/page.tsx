@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
+import { cache, Suspense } from "react";
+import { AuthException } from "@/modules/auth/auth.errors";
+import { getCurrentUserAvailabilityPerks } from "@/modules/membership/membership-availability-access";
+import { VenueService } from "@/modules/venues/venue.service";
 import type { VenueDetail } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
 import { BookingWidget } from "@/components/venues/BookingWidget";
@@ -16,16 +18,24 @@ interface VenuePageProps {
     params: Promise<{ slug: string }>;
 }
 
-async function getVenue(slug: string): Promise<VenueDetail | null> {
+const venueService = new VenueService();
+
+const getVenue = cache(async (slug: string): Promise<VenueDetail | null> => {
     try {
-        return await serverFetch<VenueDetail>(`/api/v1/venues/${slug}`);
+        const perks = await getCurrentUserAvailabilityPerks();
+
+        return await venueService.getPublicVenueDetailBySlug(slug, perks.can_view_exclusive_deals);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
+        if (error instanceof AuthException && error.status === 404) {
             return null;
         }
 
         throw error;
     }
+});
+
+function DetailSectionSkeleton() {
+    return <div className="h-24 animate-pulse rounded-xl border border-border bg-void-2" aria-hidden="true" />;
 }
 
 export async function generateMetadata({ params }: VenuePageProps): Promise<Metadata> {
@@ -107,7 +117,9 @@ export default async function VenueDetailPage({ params }: VenuePageProps) {
                         </div>
                     )}
 
-                    <VenueUpcomingEvents slug={venue.slug} />
+                    <Suspense fallback={<DetailSectionSkeleton />}>
+                        <VenueUpcomingEvents venueId={venue.id} />
+                    </Suspense>
 
                     <VenueDealsList deals={venue.deals} />
 
@@ -148,9 +160,13 @@ export default async function VenueDetailPage({ params }: VenuePageProps) {
 
                     <VenueReviewsList reviews={venue.reviews} />
 
-                    <WriteVenueReviewSection slug={venue.slug} />
+                    <Suspense fallback={<DetailSectionSkeleton />}>
+                        <WriteVenueReviewSection slug={venue.slug} />
+                    </Suspense>
 
-                    <VenueForumDiscussion venueId={venue.id} venueName={venue.name} />
+                    <Suspense fallback={<DetailSectionSkeleton />}>
+                        <VenueForumDiscussion venueId={venue.id} venueName={venue.name} />
+                    </Suspense>
                 </div>
 
                 <div>

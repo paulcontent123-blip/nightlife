@@ -17,7 +17,7 @@ const LINKS = [
 export function AdminSidebar() {
     return (
         <aside className="hidden w-56 shrink-0 border-r border-border bg-void-2 px-3 py-6 md:block">
-            <Link href="/admin/dashboard" className="mb-8 flex items-center gap-2 px-2">
+            <Link href="/admin/dashboard" prefetch={false} className="mb-8 flex items-center gap-2 px-2">
                 <span className="h-[7px] w-[7px] rounded-full bg-pink" />
                 <span className="font-display text-[16px] font-extrabold">
                     <span className="text-amber">Night</span>life
@@ -29,6 +29,7 @@ export function AdminSidebar() {
                     <Link
                         key={link.href}
                         href={link.href}
+                        prefetch={false}
                         className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-white"
                     >
                         <span>{link.icon}</span>
@@ -38,6 +39,7 @@ export function AdminSidebar() {
             </nav>
             <Link
                 href="/"
+                prefetch={false}
                 className="mt-8 flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-muted-2 transition-colors hover:text-white"
             >
                 ← Về trang chính

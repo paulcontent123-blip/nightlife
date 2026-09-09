@@ -20,8 +20,13 @@ export default async function EditEventPage({ params }: PageProps) {
     let tiers: TicketTier[] = [];
 
     try {
-        event = await serverFetch<Event>(`/api/v1/admin/venues/${venueId}/events/${eventId}`);
-        const tiersResult = await serverFetch<{ items: TicketTier[] }>(`/api/v1/admin/events/${eventId}/ticket-tiers`);
+        // Independent of one another — tiers only need eventId, so fetch both
+        // concurrently instead of waiting on the event first.
+        const [eventResult, tiersResult] = await Promise.all([
+            serverFetch<Event>(`/api/v1/admin/venues/${venueId}/events/${eventId}`),
+            serverFetch<{ items: TicketTier[] }>(`/api/v1/admin/events/${eventId}/ticket-tiers`),
+        ]);
+        event = eventResult;
         tiers = tiersResult.items;
     } catch (error) {
         if (error instanceof ApiError && error.status === 404) {

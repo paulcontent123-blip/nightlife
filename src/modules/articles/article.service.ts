@@ -1,9 +1,11 @@
 import { AuthException } from "@/modules/auth/auth.errors";
+import { redisGetVersionAndJson, redisJsonSet } from "@/lib/redis/server";
+import { ARTICLE_LIST_CACHE_VERSION_KEY, incrementArticleListCacheVersion } from "./article-cache";
+import { ArticleListService } from "./article-list.service";
 import { ArticleRepository } from "./article.repository";
 import {
     AdminArticleListQuerySchema,
     CreateArticleSchema,
-    PublicArticleListQuerySchema,
     UpdateArticleSchema,
 } from "./article.validator";
 import type {
@@ -12,14 +14,24 @@ import type {
 } from "./article.types";
 
 const WORDS_PER_MINUTE = 220;
+const ARTICLE_DETAIL_CACHE_TTL_SECONDS = 300;
+
+type PublicArticle = NonNullable<Awaited<ReturnType<ArticleRepository["findPublicBySlug"]>>>;
+
+interface CachedPublicArticle {
+    version: number;
+    data: PublicArticle;
+}
 
 export class ArticleService {
-    constructor(private repository = new ArticleRepository()) { }
+    private readonly articleListService: ArticleListService;
+
+    constructor(private repository = new ArticleRepository()) {
+        this.articleListService = new ArticleListService(repository);
+    }
 
     async listPublicArticles(searchParams: URLSearchParams) {
-        const query = PublicArticleListQuerySchema.parse(Object.fromEntries(searchParams));
-
-        return this.repository.listPublic(query);
+        return this.articleListService.listPublicArticles(searchParams);
     }
 
     async listAdminArticles(searchParams: URLSearchParams) {
@@ -29,13 +41,17 @@ export class ArticleService {
     }
 
     async getPublicArticleBySlug(slug: string) {
-        const article = await this.repository.findPublicBySlug(slug);
+        const article = await this.getCachedPublicArticle(slug);
 
         if (!article) {
             throw new AuthException(404, "ARTICLE_NOT_FOUND");
         }
 
-        await this.repository.incrementViewCount(article.id, article.view_count);
+        // View tracking is analytics-only; do not block article rendering on a
+        // second database update round trip.
+        void this.repository.incrementViewCount(article.id, article.view_count).catch((error) => {
+            console.error("Article view count update failed", { article_id: article.id, error });
+        });
 
         return {
             ...article,
@@ -45,10 +61,43 @@ export class ArticleService {
     }
 
     async getPublicArticleMetaBySlug(slug: string) {
-        const article = await this.repository.findPublicBySlug(slug);
+        const article = await this.getCachedPublicArticle(slug);
 
         if (!article) {
             throw new AuthException(404, "ARTICLE_NOT_FOUND");
+        }
+
+        return article;
+    }
+
+    private async getCachedPublicArticle(slug: string) {
+        const cacheKey = `cache:articles:detail:${slug}`;
+        let version = 0;
+        let redisAvailable = false;
+
+        try {
+            const cached = await redisGetVersionAndJson<CachedPublicArticle>(
+                ARTICLE_LIST_CACHE_VERSION_KEY,
+                cacheKey
+            );
+            version = cached.version;
+            redisAvailable = true;
+
+            if (cached.value && cached.value.version === version) {
+                return cached.value.data;
+            }
+        } catch {
+            // Redis is optional; the database remains the source of truth.
+        }
+
+        const article = await this.repository.findPublicBySlug(slug);
+
+        if (article && redisAvailable) {
+            try {
+                await redisJsonSet(cacheKey, { version, data: article }, ARTICLE_DETAIL_CACHE_TTL_SECONDS);
+            } catch {
+                // Cache failures must not block the public article detail.
+            }
         }
 
         return article;
@@ -70,7 +119,7 @@ export class ArticleService {
         const content = dto.content;
         const publishedAt = this.resolvePublishedAt(dto.status, dto.published_at);
 
-        return this.repository.create({
+        const article = await this.repository.create({
             author_id: adminId,
             slug,
             title: dto.title,
@@ -90,6 +139,10 @@ export class ArticleService {
             reading_time_minutes: calculateReadingTime(content),
             published_at: publishedAt,
         });
+
+        await incrementArticleListCacheVersion();
+
+        return article;
     }
 
     async updateArticle(id: string, input: UpdateArticleDTO) {
@@ -102,7 +155,7 @@ export class ArticleService {
             ? await this.createUniqueSlug(dto.slug ?? dto.title ?? article.title, id)
             : undefined;
 
-        return this.repository.update(id, {
+        const updatedArticle = await this.repository.update(id, {
             ...(slug ? { slug } : {}),
             ...(dto.title !== undefined ? { title: dto.title } : {}),
             ...(dto.excerpt !== undefined ? { excerpt: dto.excerpt ?? null } : {}),
@@ -125,12 +178,20 @@ export class ArticleService {
                 ? { published_at: this.resolvePublishedAt(nextStatus, dto.published_at ?? article.published_at) }
                 : {}),
         });
+
+        await incrementArticleListCacheVersion();
+
+        return updatedArticle;
     }
 
     async deleteArticle(id: string) {
         await this.getAdminArticleById(id);
 
-        return this.repository.delete(id);
+        const article = await this.repository.delete(id);
+
+        await incrementArticleListCacheVersion();
+
+        return article;
     }
 
     private resolvePublishedAt(status: string, requestedPublishedAt?: string | null) {
@@ -154,11 +215,7 @@ export class ArticleService {
         return slug;
     }
 
-    private createStructuredData(article: Awaited<ReturnType<ArticleRepository["findPublicBySlug"]>>) {
-        if (!article) {
-            return null;
-        }
-
+    private createStructuredData(article: PublicArticle) {
         return {
             "@context": "https://schema.org",
             "@type": article.seo.schema_type,

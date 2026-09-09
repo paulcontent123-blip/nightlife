@@ -1,16 +1,23 @@
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
+import { hasSupabaseAuthCookie } from "@/lib/supabase/server";
+import { requireAuth } from "@/modules/auth/auth.guard";
+import { AuthException } from "@/modules/auth/auth.errors";
+import { VenueReviewService } from "@/modules/venue-reviews/venue-review.service";
 import type { EligibleReviewBooking } from "@/lib/api/types";
 import { VenueReviewForm } from "@/components/venues/VenueReviewForm";
+
+const venueReviewService = new VenueReviewService();
 
 export async function WriteVenueReviewSection({ slug }: { slug: string }) {
     let bookings: EligibleReviewBooking[] | null = null;
 
-    try {
-        bookings = await serverFetch<EligibleReviewBooking[]>(`/api/v1/venues/${slug}/reviews/eligible`);
-    } catch (error) {
-        if (!(error instanceof ApiError)) {
-            throw error;
+    if (await hasSupabaseAuthCookie()) {
+        try {
+            const user = await requireAuth();
+            bookings = await venueReviewService.listEligibleBookings(slug, user);
+        } catch (error) {
+            if (!(error instanceof AuthException)) {
+                throw error;
+            }
         }
     }
 

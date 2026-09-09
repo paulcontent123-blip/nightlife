@@ -3,11 +3,35 @@ import { AuthException } from "@/modules/auth/auth.errors";
 import { mapArticle, mapArticleListItem } from "./article.mapper";
 import type {
     ArticleListQuery,
+    ArticleListRow,
     ArticleRecord,
     ArticleRow,
 } from "./article.types";
 
 const ARTICLES_TABLE = "seo_articles";
+const ARTICLE_LIST_COLUMNS = [
+    "id",
+    "author_id",
+    "slug",
+    "title",
+    "excerpt",
+    "category",
+    "tags",
+    "city",
+    "target_keyword",
+    "meta_title",
+    "meta_description",
+    "canonical_url",
+    "og_image_url",
+    "schema_type",
+    "status",
+    "is_featured",
+    "reading_time_minutes",
+    "view_count",
+    "published_at",
+    "created_at",
+    "updated_at",
+].join(",");
 
 type UpdateArticleRecord = Partial<ArticleRecord>;
 type ArticleListRequest = {
@@ -33,18 +57,18 @@ export class ArticleRepository {
     }
 
     async listPublic(query: ArticleListQuery) {
-        let request = this.createListQuery(query)
+        let request = this.createListQuery(query, ARTICLE_LIST_COLUMNS, "planned")
             .eq("status", "published")
             .not("published_at", "is", null)
             .lte("published_at", new Date().toISOString());
 
         request = this.applySort(request);
 
-        return this.paginate(request, query.page, query.limit);
+        return this.paginate<ArticleListRow>(request, query.page, query.limit);
     }
 
     async listAdmin(query: ArticleListQuery) {
-        let request = this.createListQuery(query);
+        let request = this.createListQuery(query, "*", "exact");
 
         if (query.status) {
             request = request.eq("status", query.status);
@@ -52,7 +76,7 @@ export class ArticleRepository {
 
         request = this.applySort(request);
 
-        return this.paginate(request, query.page, query.limit);
+        return this.paginate<ArticleListRow>(request, query.page, query.limit);
     }
 
     async findPublicBySlug(slug: string) {
@@ -160,10 +184,14 @@ export class ArticleRepository {
         return Boolean(data);
     }
 
-    private createListQuery(query: ArticleListQuery) {
+    private createListQuery(
+        query: ArticleListQuery,
+        columns: string,
+        count: "exact" | "planned"
+    ) {
         let request = this.supabase
             .from(ARTICLES_TABLE)
-            .select("*", { count: "exact" }) as unknown as ArticleListRequest;
+            .select(columns, { count }) as unknown as ArticleListRequest;
 
         if (query.city) {
             request = request.eq("city", query.city);
@@ -199,7 +227,7 @@ export class ArticleRepository {
             .order("created_at", { ascending: false });
     }
 
-    private async paginate(
+    private async paginate<T extends ArticleRow | ArticleListRow>(
         request: ArticleListRequest,
         page: number,
         limit: number
@@ -208,7 +236,7 @@ export class ArticleRepository {
         const to = from + limit - 1;
         const { data, error, count } = await request
             .range(from, to)
-            .returns<ArticleRow[]>();
+            .returns<T[]>();
 
         if (error) {
             throw new AuthException(500, "DATABASE_ERROR", error.message);

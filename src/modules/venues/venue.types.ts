@@ -242,6 +242,27 @@ export interface VenueRow {
     created_at: string;
 }
 
+export type VenueListRow = Pick<
+    VenueRow,
+    | "id"
+    | "slug"
+    | "name"
+    | "type"
+    | "district"
+    | "city"
+    | "cover_charge"
+    | "price_range"
+    | "features"
+    | "thumbnail_url"
+    | "is_verified"
+    | "is_active"
+    | "avg_rating"
+    | "total_reviews"
+    | "total_bookings"
+    | "open_hours"
+    | "created_at"
+>;
+
 export interface VenueAddressPayload {
     address: string;
     district: string | null;

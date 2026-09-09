@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { serverFetch } from "@/lib/api/server";
-import type { Booking, MembershipSubscription, Paginated, Venue } from "@/lib/api/types";
+import type { Booking, MembershipSubscription, Paginated, VenueListItem } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { BookingStatusBadge } from "@/components/bookings/BookingStatusBadge";
 import { formatDate } from "@/lib/format";
@@ -14,7 +14,7 @@ function todayIso() {
 
 export default async function AdminDashboardPage() {
     const [venues, pendingBookings, todaysBookings, pendingMemberships] = await Promise.all([
-        serverFetch<Paginated<Venue>>("/api/v1/admin/venues?limit=1"),
+        serverFetch<Paginated<VenueListItem>>("/api/v1/admin/venues?limit=1"),
         serverFetch<Paginated<Booking>>("/api/v1/admin/bookings?status=pending&limit=1"),
         serverFetch<Paginated<Booking>>(`/api/v1/admin/bookings?booking_date=${todayIso()}&limit=8`),
         serverFetch<Paginated<MembershipSubscription>>("/api/v1/admin/membership/subscriptions?status=payment_received&limit=1"),

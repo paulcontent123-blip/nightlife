@@ -1,5 +1,5 @@
 import type { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, hasSupabaseAuthCookie } from "@/lib/supabase/server";
 import { AuthCache } from "./auth.cache";
 import { AuthError, AuthException } from "./auth.errors";
 import { getRoleRedirectPath, mapAuthorization, mapSession } from "./auth.mapper";
@@ -133,6 +133,10 @@ export class AuthService {
     }
 
     async me(): Promise<UserProfile> {
+        if (!(await hasSupabaseAuthCookie())) {
+            throw new AuthException(401, "UNAUTHORIZED");
+        }
+
         const supabase = await createClient();
         const { data, error } = await supabase.auth.getUser();
 

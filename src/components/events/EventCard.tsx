@@ -8,6 +8,7 @@ export function EventCard({ event }: { event: Event }) {
     return (
         <Link
             href={`/events/${event.slug}`}
+            prefetch={false}
             className="flex overflow-hidden rounded-xl border border-border bg-void-3 shadow-[0_4px_28px_rgba(0,0,0,.5)] transition-all hover:-translate-y-1 hover:border-amber-border"
         >
             <div className="flex w-[70px] shrink-0 flex-col items-center justify-center border-r border-border py-3.5">

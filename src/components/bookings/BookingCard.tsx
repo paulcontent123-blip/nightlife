@@ -23,7 +23,7 @@ export function BookingCard({ booking }: { booking: Booking }) {
             )}
             {booking.special_requests && <p className="mt-1 truncate text-xs text-muted">Ghi chú: {booking.special_requests}</p>}
             <div className="mt-3 flex items-center gap-4">
-                <Link href={`/bookings/${booking.id}`} className="font-display text-sm font-bold text-amber">
+                <Link href={`/bookings/${booking.id}`} prefetch={false} className="font-display text-sm font-bold text-amber">
                     Xem chi tiết →
                 </Link>
                 {CANCELLABLE.includes(booking.status) && <CancelBookingButton bookingId={booking.id} />}

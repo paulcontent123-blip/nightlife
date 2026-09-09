@@ -1,18 +1,31 @@
 import Link from "next/link";
-import type { Venue } from "@/lib/api/types";
+import type { VenueListItem } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
 import { formatVnd, VENUE_TYPE_EMOJI, VENUE_TYPE_LABEL } from "@/lib/format";
+import { getOptimizedCloudinaryImageUrl } from "@/lib/cloudinary/image-url";
 
-export function VenueCard({ venue }: { venue: Venue }) {
+export function VenueCard({ venue, priority = false }: { venue: VenueListItem; priority?: boolean }) {
+    const thumbnailUrl = getOptimizedCloudinaryImageUrl(venue.media.thumbnail_url);
+
     return (
         <Link
             href={`/venues/${venue.slug}`}
+            prefetch={false}
             className="group block overflow-hidden rounded-xl border border-border bg-void-2 shadow-[0_4px_28px_rgba(0,0,0,.5)] transition-all hover:-translate-y-1 hover:border-amber-border hover:shadow-[0_12px_52px_rgba(0,0,0,.6)]"
         >
             <div className="relative flex h-40 items-center justify-center overflow-hidden bg-gradient-to-br from-void-3 to-void-4 text-5xl">
-                {venue.media.thumbnail_url ? (
+                {thumbnailUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={venue.media.thumbnail_url} alt={venue.name} className="h-full w-full object-cover" />
+                    <img
+                        src={thumbnailUrl}
+                        alt={venue.name}
+                        width={640}
+                        height={360}
+                        loading={priority ? "eager" : "lazy"}
+                        decoding="async"
+                        fetchPriority={priority ? "high" : "low"}
+                        className="h-full w-full object-cover"
+                    />
                 ) : (
                     <span>{VENUE_TYPE_EMOJI[venue.type] ?? "🥃"}</span>
                 )}

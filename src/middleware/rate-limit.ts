@@ -20,19 +20,26 @@ type RedisCommandResult = {
     error?: string;
 };
 
+const REDIS_REQUEST_TIMEOUT_MS = 800;
+
 export async function publicRateLimit(request: NextRequest): Promise<NextResponse | null> {
-    const ip = getClientIp(request);
-    const result = await checkRedisRateLimit(
-        `public:${ip}`,
-        RATE_LIMIT.PUBLIC_API.limit,
-        RATE_LIMIT.PUBLIC_API.window
-    );
+    const result = await checkPublicApiRateLimit(request);
 
     if (!result.allowed) {
         return rateLimitExceededResponse(result, "PUBLIC_RATE_LIMIT_EXCEEDED");
     }
 
     return null;
+}
+
+export async function checkPublicApiRateLimit(request: NextRequest): Promise<RateLimitResult> {
+    const ip = getClientIp(request);
+
+    return checkRedisRateLimit(
+        `public:${ip}`,
+        RATE_LIMIT.PUBLIC_API.limit,
+        RATE_LIMIT.PUBLIC_API.window
+    );
 }
 
 export async function uploadRateLimit(userId: string): Promise<NextResponse | null> {
@@ -109,11 +116,18 @@ async function checkRedisRateLimit(
         return createDisabledResult(limit, windowSeconds);
     }
 
-    const response = await executeRedisPipeline(redis, [
-        ["INCR", key],
-        ["EXPIRE", key, windowSeconds, "NX"],
-        ["TTL", key],
-    ]);
+    let response: RedisCommandResult[];
+
+    try {
+        response = await executeRedisPipeline(redis, [
+            ["INCR", key],
+            ["EXPIRE", key, windowSeconds, "NX"],
+            ["TTL", key],
+        ]);
+    } catch {
+        // A cache outage must not make a public endpoint unavailable.
+        return createDisabledResult(limit, windowSeconds);
+    }
 
     const count = Number(response[0]?.result ?? 0);
     const ttl = normalizeTtl(Number(response[2]?.result), windowSeconds);
@@ -141,10 +155,16 @@ async function readRedisRateLimit(
         return createDisabledResult(limit, windowSeconds);
     }
 
-    const response = await executeRedisPipeline(redis, [
-        ["GET", key],
-        ["TTL", key],
-    ]);
+    let response: RedisCommandResult[];
+
+    try {
+        response = await executeRedisPipeline(redis, [
+            ["GET", key],
+            ["TTL", key],
+        ]);
+    } catch {
+        return createDisabledResult(limit, windowSeconds);
+    }
 
     const count = Number(response[0]?.result ?? 0);
     const ttl = normalizeTtl(Number(response[1]?.result), windowSeconds);
@@ -165,28 +185,36 @@ async function executeRedisPipeline(
     redis: RedisRestConfig,
     commands: Array<Array<string | number>>
 ): Promise<RedisCommandResult[]> {
-    const response = await fetch(`${redis.url.replace(/\/$/, "")}/pipeline`, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${redis.token}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(commands),
-        cache: "no-store",
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REDIS_REQUEST_TIMEOUT_MS);
 
-    if (!response.ok) {
-        throw new Error(`Redis rate limit request failed with status ${response.status}`);
+    try {
+        const response = await fetch(`${redis.url.replace(/\/$/, "")}/pipeline`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${redis.token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(commands),
+            cache: "no-store",
+            signal: controller.signal,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Redis rate limit request failed with status ${response.status}`);
+        }
+
+        const body = await response.json() as RedisCommandResult[];
+        const failedCommand = body.find((item) => item.error);
+
+        if (failedCommand?.error) {
+            throw new Error(failedCommand.error);
+        }
+
+        return body;
+    } finally {
+        clearTimeout(timeout);
     }
-
-    const body = await response.json() as RedisCommandResult[];
-    const failedCommand = body.find((item) => item.error);
-
-    if (failedCommand?.error) {
-        throw new Error(failedCommand.error);
-    }
-
-    return body;
 }
 
 function rateLimitExceededResponse(result: RateLimitResult, code: string): NextResponse {
@@ -213,6 +241,14 @@ function createRateLimitHeaders(result: RateLimitResult): Record<string, string>
         "X-RateLimit-Store": result.store,
         ...(result.retryAfter > 0 ? { "Retry-After": result.retryAfter.toString() } : {}),
     };
+}
+
+export function appendRateLimitHeaders(response: NextResponse, result: RateLimitResult): NextResponse {
+    Object.entries(createRateLimitHeaders(result)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+    });
+
+    return response;
 }
 
 function getClientIp(request: NextRequest): string {

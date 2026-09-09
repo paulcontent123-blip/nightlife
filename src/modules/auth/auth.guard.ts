@@ -1,7 +1,13 @@
 import { AuthService } from "./auth.service";
+import { AuthException } from "./auth.errors";
+import { hasSupabaseAuthCookie } from "@/lib/supabase/server";
 import type { UserProfile, UserRole } from "./auth.types";
 
 export async function requireAuth(): Promise<UserProfile> {
+    if (!(await hasSupabaseAuthCookie())) {
+        throw new AuthException(401, "UNAUTHORIZED");
+    }
+
     const authService = new AuthService();
 
     return authService.me();

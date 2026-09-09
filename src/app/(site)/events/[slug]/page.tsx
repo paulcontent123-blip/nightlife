@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
+import { cache } from "react";
+import { AuthException } from "@/modules/auth/auth.errors";
+import { EventService } from "@/modules/events/event.service";
+import { TicketTierService } from "@/modules/ticket-tiers/ticket-tier.service";
 import type { Event } from "@/lib/api/types";
+import type { TicketTier } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
 import { TicketPurchaseWidget } from "@/components/events/TicketPurchaseWidget";
 import { formatDate, formatTime } from "@/lib/format";
@@ -11,17 +14,32 @@ interface EventPageProps {
     params: Promise<{ slug: string }>;
 }
 
-async function getEvent(slug: string): Promise<Event | null> {
+const eventService = new EventService();
+const ticketTierService = new TicketTierService();
+
+const getEvent = cache(async (slug: string): Promise<Event | null> => {
     try {
-        return await serverFetch<Event>(`/api/v1/events/${slug}`);
+        return await eventService.getPublicEventBySlug(slug);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
+        if (error instanceof AuthException && error.status === 404) {
             return null;
         }
 
         throw error;
     }
-}
+});
+
+const getTicketTiers = cache(async (slug: string): Promise<TicketTier[] | null> => {
+    try {
+        return await ticketTierService.listPublicEventTicketTiers(slug);
+    } catch (error) {
+        if (error instanceof AuthException && error.status === 404) {
+            return null;
+        }
+
+        throw error;
+    }
+});
 
 export async function generateMetadata({ params }: EventPageProps): Promise<Metadata> {
     const { slug } = await params;
@@ -32,7 +50,10 @@ export async function generateMetadata({ params }: EventPageProps): Promise<Meta
 
 export default async function EventDetailPage({ params }: EventPageProps) {
     const { slug } = await params;
-    const event = await getEvent(slug);
+    const [event, ticketTiers] = await Promise.all([
+        getEvent(slug),
+        getTicketTiers(slug),
+    ]);
 
     if (!event) {
         notFound();
@@ -96,7 +117,7 @@ export default async function EventDetailPage({ params }: EventPageProps) {
                 </div>
 
                 <div>
-                    <TicketPurchaseWidget slug={event.slug} />
+                    <TicketPurchaseWidget slug={event.slug} initialTiers={ticketTiers ?? undefined} />
                 </div>
             </div>
         </div>

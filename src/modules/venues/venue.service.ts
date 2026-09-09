@@ -5,36 +5,33 @@ import {
     readVenuePhotoFingerprintFromUrl,
     uploadVenuePhoto,
 } from "@/lib/cloudinary/venue-photos";
-import { redisJsonGet, redisJsonSet } from "@/lib/redis/server";
-import { logBookingLifecycle } from "@/lib/logger/booking-lifecycle";
+import { redisGetVersionAndJson, redisJsonSet } from "@/lib/redis/server";
 import { AuthException } from "@/modules/auth/auth.errors";
-import {
-    assertWithinPriorityBookingWindow,
-} from "@/modules/membership/priority-booking";
 import {
     CreateVenueSchema,
     UpdateVenueSchema,
-    VenueAvailabilityQuerySchema,
     VenueListQuerySchema,
     VenueNearbyQuerySchema,
 } from "./venue.validator";
 import { VenueRepository } from "./venue.repository";
+import { VenueListService } from "./venue-list.service";
+import { VenueAvailabilityService } from "./venue-availability.service";
+import { incrementBarTourCacheVersion } from "@/modules/bar-tour/bar-tour-cache";
 import { mapVenue } from "./venue.mapper";
 import {
     incrementVenueListCacheVersion,
-    readVenueAvailabilityCacheVersion,
-    readVenueListCacheVersion,
+    VENUE_LIST_CACHE_VERSION_KEY,
 } from "./venue-cache";
 import type {
     CreateVenueDTO,
     UpdateVenueDTO,
     VenueAddressPayload,
-    VenueAvailabilityQuery,
-    VenueAvailabilityResult,
     VenueCity,
-    VenueListQuery,
+    VenueDealRow,
     VenueNearbyQuery,
     VenueNearbyResult,
+    VenueReviewRow,
+    VenueTableRow,
 } from "./venue.types";
 
 const DEFAULT_VENUE_ADDRESS: VenueAddressPayload = {
@@ -46,30 +43,70 @@ const DEFAULT_VENUE_ADDRESS: VenueAddressPayload = {
 };
 
 const CACHE_TTL_SECONDS = 300;
-const DEFAULT_TIME_SLOTS = ["18:00", "19:00", "20:00", "21:00", "22:00", "23:00"];
-const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 const MAX_VENUE_PHOTOS = 20;
 const EARTH_RADIUS_METERS = 6_371_000;
 
+function buildVenueDetailResult(
+    venue: ReturnType<typeof mapVenue>,
+    tables: VenueTableRow[],
+    deals: VenueDealRow[],
+    reviews: VenueReviewRow[]
+) {
+    return {
+        ...venue,
+        tables: tables.map((table) => ({
+            id: table.id,
+            table_name: table.table_name,
+            type: table.type,
+            capacity: table.capacity,
+            min_spend: table.min_spend,
+            deposit_required: table.deposit_required,
+            is_active: table.is_active,
+        })),
+        deals: deals.map((deal) => ({
+            id: deal.id,
+            title: deal.title,
+            description: deal.description,
+            discount_type: deal.discount_type,
+            discount_value: deal.discount_value,
+            applicable_days: deal.applicable_days ?? [],
+            start_time: deal.start_time,
+            end_time: deal.end_time,
+            conditions: deal.conditions,
+            is_exclusive: deal.is_exclusive,
+            valid_until: deal.valid_until,
+            created_at: deal.created_at,
+        })),
+        reviews: reviews.map((review) => ({
+            id: review.id,
+            rating: review.rating,
+            atmosphere_rating: review.atmosphere_rating,
+            service_rating: review.service_rating,
+            value_rating: review.value_rating,
+            content: review.content,
+            visited_date: review.visited_date,
+            images: review.images ?? [],
+            is_verified_visit: review.is_verified_visit,
+            helpful_count: review.helpful_count,
+            created_at: review.created_at,
+        })),
+    };
+}
+
+type PublicVenueDetailResult = ReturnType<typeof buildVenueDetailResult>;
+
 export class VenueService {
-    constructor(private repository = new VenueRepository()) { }
+    private readonly venueListService: VenueListService;
+    private readonly venueAvailabilityService: VenueAvailabilityService;
+
+    constructor(private repository = new VenueRepository()) {
+        this.venueListService = new VenueListService(repository);
+        this.venueAvailabilityService = new VenueAvailabilityService(repository);
+    }
 
     //lấy danh sách venue cho người dùng public, có filter, sort, phân trang và cache Redis.
     async listPublicVenues(searchParams: URLSearchParams) {
-        const query = VenueListQuerySchema.parse(Object.fromEntries(searchParams));
-        const cacheVersion = await readVenueListCacheVersion();
-        const cacheKey = this.createVenueListCacheKey(cacheVersion, query);
-        const cachedResult = await this.readCache<Awaited<ReturnType<VenueRepository["listVenues"]>>>(cacheKey);
-
-        if (cachedResult) {
-            return cachedResult;
-        }
-
-        const result = await this.repository.listVenues(query, true);
-
-        await this.writeCache(cacheKey, result);
-
-        return result;
+        return this.venueListService.listPublicVenues(searchParams);
     }
 
     //lấy danh sách venue cho admin, có thể xem cả venue đang inactive.
@@ -142,7 +179,17 @@ export class VenueService {
     }
 
     //lấy chi tiết venue public theo slug, bao gồm thông tin venue, bàn, chương trình khuyến mãi và đánh giá gần đây.
+    // Cached (same invalidation counter as the venue list) since this is the
+    // highest-traffic public detail page — cuts a 2-round-trip Supabase read
+    // down to a single Redis round trip on a cache hit.
     async getPublicVenueDetailBySlug(slug: string, includeExclusiveDeals = false) {
+        const cacheKey = this.createVenueDetailCacheKey(slug, includeExclusiveDeals);
+        const { version, cached } = await this.readVenueDetailCache<PublicVenueDetailResult>(cacheKey);
+
+        if (cached && cached.version === version) {
+            return cached.data;
+        }
+
         const venue = await this.getPublicVenueBySlug(slug);
         const [tables, deals, reviews] = await Promise.all([
             this.repository.listActiveTables(venue.id),
@@ -150,45 +197,41 @@ export class VenueService {
             this.repository.listRecentReviews(venue.id),
         ]);
 
-        return {
-            ...venue,
-            tables: tables.map((table) => ({
-                id: table.id,
-                table_name: table.table_name,
-                type: table.type,
-                capacity: table.capacity,
-                min_spend: table.min_spend,
-                deposit_required: table.deposit_required,
-                is_active: table.is_active,
-            })),
-            deals: deals.map((deal) => ({
-                id: deal.id,
-                title: deal.title,
-                description: deal.description,
-                discount_type: deal.discount_type,
-                discount_value: deal.discount_value,
-                applicable_days: deal.applicable_days ?? [],
-                start_time: deal.start_time,
-                end_time: deal.end_time,
-                conditions: deal.conditions,
-                is_exclusive: deal.is_exclusive,
-                valid_until: deal.valid_until,
-                created_at: deal.created_at,
-            })),
-            reviews: reviews.map((review) => ({
-                id: review.id,
-                rating: review.rating,
-                atmosphere_rating: review.atmosphere_rating,
-                service_rating: review.service_rating,
-                value_rating: review.value_rating,
-                content: review.content,
-                visited_date: review.visited_date,
-                images: review.images ?? [],
-                is_verified_visit: review.is_verified_visit,
-                helpful_count: review.helpful_count,
-                created_at: review.created_at,
-            })),
-        };
+        const result = buildVenueDetailResult(venue, tables, deals, reviews);
+
+        await this.writeVenueDetailCache(cacheKey, { version, data: result });
+
+        return result;
+    }
+
+    // tạo cache key cho venue detail, tách riêng theo includeExclusiveDeals để
+    // không lộ deal độc quyền cho user không phải VIP qua cache dùng chung.
+    private createVenueDetailCacheKey(slug: string, includeExclusiveDeals: boolean) {
+        return `cache:venues:detail:${slug}:${includeExclusiveDeals}`;
+    }
+
+    // Reads the venue-list invalidation counter and the detail cache entry in
+    // one Redis round trip; reuses the same counter as the list cache since
+    // every mutation that should invalidate detail pages already bumps it.
+    private async readVenueDetailCache<T>(key: string): Promise<{ version: number; cached: { version: number; data: T } | null }> {
+        try {
+            const { version, value } = await redisGetVersionAndJson<{ version: number; data: T }>(
+                VENUE_LIST_CACHE_VERSION_KEY,
+                key
+            );
+
+            return { version, cached: value };
+        } catch {
+            return { version: 0, cached: null };
+        }
+    }
+
+    private async writeVenueDetailCache<T>(key: string, value: { version: number; data: T }): Promise<void> {
+        try {
+            await redisJsonSet(key, value, CACHE_TTL_SECONDS);
+        } catch {
+            // Cache failures should not block the public venue detail page.
+        }
     }
 
     // kiểm tra bàn còn trống theo date và party_size, trả về danh sách bàn phù hợp và khung giờ còn chỗ, có cache Redis TTL 5 phút.
@@ -200,161 +243,8 @@ export class VenueService {
             guaranteedVipTable?: boolean;
             conciergeHotline?: string | null;
         } = {}
-    ): Promise<VenueAvailabilityResult> {
-        const query = VenueAvailabilityQuerySchema.parse(Object.fromEntries(searchParams));
-        const priorityBookingHours = perks.priorityBookingHours ?? 0;
-        const guaranteedVipTable = perks.guaranteedVipTable === true;
-        const bookingWindow = assertWithinPriorityBookingWindow(query.date, priorityBookingHours);
-        logBookingLifecycle("availability_check_requested", {
-            venue_slug: slug,
-            date: query.date,
-            party_size: query.party_size,
-            priority_booking_hours: priorityBookingHours,
-            guaranteed_vip_table: guaranteedVipTable,
-        });
-
-        const venue = await this.getPublicVenueBySlug(slug);
-        const cacheVersion = await readVenueAvailabilityCacheVersion(venue.id);
-        const cacheKey = this.createAvailabilityCacheKey(
-            venue.id,
-            cacheVersion,
-            slug,
-            query,
-            priorityBookingHours,
-            guaranteedVipTable
-        );
-        const cachedResult = await this.readCache<VenueAvailabilityResult>(cacheKey);
-
-        if (cachedResult) {
-            logBookingLifecycle("availability_check_cache_hit", {
-                venue_id: venue.id,
-                venue_slug: slug,
-                date: query.date,
-                party_size: query.party_size,
-                available_tables: cachedResult.tables.length,
-                time_slots: cachedResult.time_slots.length,
-            });
-
-            return cachedResult;
-        }
-
-        logBookingLifecycle("availability_check_cache_miss", {
-            venue_id: venue.id,
-            venue_slug: slug,
-            date: query.date,
-            party_size: query.party_size,
-        });
-
-        const tables = await this.repository.listEligibleTables(venue.id, query.party_size);
-        const bookings = await this.repository.listBlockingBookings(venue.id, query);
-        const bookedTableIdsByTime = new Map<string, Set<string>>();
-        const vipTableIds = new Set(
-            tables
-                .filter((table) => table.type.toLowerCase() === "vip")
-                .map((table) => table.id)
-        );
-
-        for (const booking of bookings) {
-            if (!booking.table_id) {
-                continue;
-            }
-
-            const time = this.normalizeBookingTime(booking.booking_time);
-            const bookedTableIds = bookedTableIdsByTime.get(time) ?? new Set<string>();
-
-            bookedTableIds.add(booking.table_id);
-            bookedTableIdsByTime.set(time, bookedTableIds);
-        }
-
-        const timeSlots = this.createAvailabilitySlots(venue.operations.open_hours, query.date).map((time) => {
-            const bookedTableIds = bookedTableIdsByTime.get(time) ?? new Set<string>();
-            const availableTableIds = tables
-                .filter((table) => !bookedTableIds.has(table.id))
-                .map((table) => table.id);
-
-            return {
-                time,
-                available_table_count: availableTableIds.length,
-                available_table_ids: availableTableIds,
-            };
-        });
-
-        const result: VenueAvailabilityResult = {
-            venue: {
-                id: venue.id,
-                slug: venue.slug,
-                name: venue.name,
-            },
-            date: query.date,
-            party_size: query.party_size,
-            tables: tables.map((table) => ({
-                id: table.id,
-                table_name: table.table_name,
-                type: table.type,
-                capacity: table.capacity,
-                min_spend: table.min_spend,
-                deposit_required: table.deposit_required,
-            })),
-            time_slots: timeSlots,
-            booking_window: bookingWindow,
-            guaranteed_vip: this.createGuaranteedVipAvailability({
-                eligible: guaranteedVipTable,
-                hasAvailableVipTable: timeSlots.some((slot) =>
-                    slot.available_table_ids.some((tableId) => vipTableIds.has(tableId))
-                ),
-                conciergeHotline: perks.conciergeHotline ?? null,
-            }),
-            cache: {
-                ttl: CACHE_TTL_SECONDS,
-            },
-        };
-
-        await this.writeCache(cacheKey, result);
-        logBookingLifecycle("availability_check_completed", {
-            venue_id: venue.id,
-            venue_slug: slug,
-            date: query.date,
-            party_size: query.party_size,
-            eligible_tables: tables.length,
-            blocking_bookings: bookings.length,
-            time_slots: result.time_slots.length,
-        });
-
-        return result;
-    }
-
-    private createGuaranteedVipAvailability(input: {
-        eligible: boolean;
-        hasAvailableVipTable: boolean;
-        conciergeHotline: string | null;
-    }) {
-        if (!input.eligible) {
-            return {
-                eligible: false,
-                available: false,
-                action: "none" as const,
-                concierge_hotline: null,
-                message: null,
-            };
-        }
-
-        if (input.hasAvailableVipTable) {
-            return {
-                eligible: true,
-                available: true,
-                action: "none" as const,
-                concierge_hotline: input.conciergeHotline,
-                message: "VIP table options are available for this request.",
-            };
-        }
-
-        return {
-            eligible: true,
-            available: false,
-            action: "contact_concierge" as const,
-            concierge_hotline: input.conciergeHotline,
-            message: "No VIP table is currently available. Contact concierge so operations can offer an alternative.",
-        };
+    ) {
+        return this.venueAvailabilityService.getVenueAvailability(slug, searchParams, perks);
     }
 
     // Admin lookup by id; used before update/delete/photo actions to ensure the venue exists.
@@ -407,6 +297,7 @@ export class VenueService {
         });
 
         await incrementVenueListCacheVersion();
+        await incrementBarTourCacheVersion();
 
         return venue;
     }
@@ -445,6 +336,7 @@ export class VenueService {
         const venue = await this.repository.updateVenue(id, updatePayload);
 
         await incrementVenueListCacheVersion();
+        await incrementBarTourCacheVersion();
 
         return venue;
     }
@@ -496,6 +388,7 @@ export class VenueService {
         });
 
         await incrementVenueListCacheVersion();
+        await incrementBarTourCacheVersion();
 
         await this.deleteUnreferencedVenuePhotos(
             [...venue.media.images, venue.media.thumbnail_url].filter((url): url is string => Boolean(url)),
@@ -540,6 +433,7 @@ export class VenueService {
         });
 
         await incrementVenueListCacheVersion();
+        await incrementBarTourCacheVersion();
 
         return {
             venue: updatedVenue,
@@ -554,6 +448,7 @@ export class VenueService {
         const venue = await this.repository.softDeleteVenue(id);
 
         await incrementVenueListCacheVersion();
+        await incrementBarTourCacheVersion();
 
         return venue;
     }
@@ -767,107 +662,6 @@ export class VenueService {
         return "hcm";
     }
 
-    // tạo Redis cache key cho danh sách venue.
-    private createVenueListCacheKey(version: number, query: VenueListQuery) {
-        return `cache:venues:list:v${version}:${JSON.stringify({
-            ...query,
-            features: query.features ? [...query.features].sort() : undefined,
-        })}`;
-    }
-
-    // tạo Redis cache key cho availability.
-    private createAvailabilityCacheKey(
-        venueId: string,
-        version: number,
-        slug: string,
-        query: VenueAvailabilityQuery,
-        priorityBookingHours: number,
-        guaranteedVipTable: boolean
-    ) {
-        return `cache:venues:availability:${venueId}:v${version}:${slug}:${query.date}:${query.party_size}:priority:${priorityBookingHours}:guaranteed:${guaranteedVipTable}`;
-    }
-
-    // Reads JSON from Redis; cache errors are treated as cache misses.
-    private async readCache<T>(key: string): Promise<T | null> {
-        try {
-            return await redisJsonGet<T>(key);
-        } catch {
-            return null;
-        }
-    }
-
-    // Writes JSON to Redis with the module TTL; cache failures do not block API responses.
-    private async writeCache<T>(key: string, value: T): Promise<void> {
-        try {
-            await redisJsonSet(key, value, CACHE_TTL_SECONDS);
-        } catch {
-            // Cache failures should not block the business API response.
-        }
-    }
-
-    // Builds hourly booking slots from venue open hours, with safe defaults when missing.
-    private createAvailabilitySlots(
-        openHours: Record<string, string> | null | undefined,
-        date: string
-    ) {
-        const dayKey = DAY_KEYS[this.readDateInVietnamTimezone(date).getDay()];
-        const schedule = openHours?.[dayKey];
-
-        if (!schedule) {
-            return DEFAULT_TIME_SLOTS;
-        }
-
-        if (["closed", "off"].includes(schedule.trim().toLowerCase())) {
-            return [];
-        }
-
-        const range = schedule.match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
-
-        if (!range) {
-            return DEFAULT_TIME_SLOTS;
-        }
-
-        const start = Number(range[1]) * 60 + Number(range[2]);
-        let end = Number(range[3]) * 60 + Number(range[4]);
-
-        if (end <= start) {
-            end += 24 * 60;
-        }
-
-        const slots: string[] = [];
-
-        for (let minute = start; minute < end; minute += 60) {
-            slots.push(this.formatTimeSlot(minute));
-        }
-
-        return slots;
-    }
-
-    // Normalizes booking time values to HH:mm so they match generated time slots.
-    private normalizeBookingTime(value: string) {
-        const match = value.match(/^(\d{1,2}):(\d{2})/);
-
-        if (!match) {
-            return value;
-        }
-
-        return `${match[1].padStart(2, "0")}:${match[2]}`;
-    }
-
-    // format số phút thành giờ HH:mm.
-    private formatTimeSlot(totalMinutes: number) {
-        const minutesInDay = 24 * 60;
-        const normalizedMinutes = ((totalMinutes % minutesInDay) + minutesInDay) % minutesInDay;
-        const hours = Math.floor(normalizedMinutes / 60).toString().padStart(2, "0");
-        const minutes = (normalizedMinutes % 60).toString().padStart(2, "0");
-
-        return `${hours}:${minutes}`;
-    }
-
-    // Parses a date as Vietnam local midnight for day-of-week availability logic.
-    private readDateInVietnamTimezone(date: string) {
-        return new Date(`${date}T00:00:00+07:00`);
-    }
 }
 
 // tính khoảng cách giữa user và venue theo tọa độ.

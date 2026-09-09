@@ -1,6 +1,8 @@
 import { AuthException } from "@/modules/auth/auth.errors";
-import { NotificationJobService } from "@/modules/notifications/jobs/notification-job.service";
+import { incrementBarTourCacheVersion } from "@/modules/bar-tour/bar-tour-cache";
 import { VenueRepository } from "@/modules/venues/venue.repository";
+import { incrementDealListCacheVersion } from "./deal-cache";
+import { DealListService } from "./deal-list.service";
 import { DealRepository } from "./deal.repository";
 import {
     CreateDealSchema,
@@ -10,11 +12,14 @@ import {
 import type { CreateDealDTO, UpdateDealDTO } from "./deal.types";
 
 export class DealService {
+    private readonly dealListService: DealListService;
+
     constructor(
         private repository = new DealRepository(),
-        private venueRepository = new VenueRepository(),
-        private notificationJobService = new NotificationJobService()
-    ) { }
+        private venueRepository = new VenueRepository()
+    ) {
+        this.dealListService = new DealListService(repository);
+    }
 
     async listVenueDeals(venueId: string, searchParams: URLSearchParams) {
         await this.ensureVenueExists(venueId);
@@ -25,9 +30,7 @@ export class DealService {
     }
 
     async listPublicDeals(searchParams: URLSearchParams, includeExclusiveDeals = false) {
-        const query = DealListQuerySchema.parse(Object.fromEntries(searchParams));
-
-        return this.repository.listPublic(query, includeExclusiveDeals);
+        return this.dealListService.listPublicDeals(searchParams, includeExclusiveDeals);
     }
 
     async listPublicVenueDeals(slug: string, searchParams: URLSearchParams, includeExclusiveDeals = false) {
@@ -75,6 +78,8 @@ export class DealService {
         });
 
         await this.scheduleHappyHourStartingJob(deal, venue);
+        await incrementDealListCacheVersion();
+        await incrementBarTourCacheVersion();
 
         return deal;
     }
@@ -88,6 +93,8 @@ export class DealService {
         const venue = await this.ensureVenueExists(venueId);
 
         await this.scheduleHappyHourStartingJob(deal, venue);
+        await incrementDealListCacheVersion();
+        await incrementBarTourCacheVersion();
 
         return deal;
     }
@@ -95,7 +102,12 @@ export class DealService {
     async deleteVenueDeal(venueId: string, dealId: string) {
         await this.getVenueDeal(venueId, dealId);
 
-        return this.repository.softDelete(venueId, dealId);
+        const deal = await this.repository.softDelete(venueId, dealId);
+
+        await incrementDealListCacheVersion();
+        await incrementBarTourCacheVersion();
+
+        return deal;
     }
 
     private async ensureVenueExists(venueId: string) {
@@ -126,7 +138,9 @@ export class DealService {
         }
     ) {
         try {
-            return await this.notificationJobService.scheduleHappyHourStarting({ deal, venue });
+            const { NotificationJobService } = await import("@/modules/notifications/jobs/notification-job.service");
+
+            return await new NotificationJobService().scheduleHappyHourStarting({ deal, venue });
         } catch {
             return null;
         }

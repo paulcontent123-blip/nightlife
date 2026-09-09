@@ -66,6 +66,7 @@ export function VenueEventManager({ venueId, initialEvents }: { venueId: string;
                         <Link
                             key={item.id}
                             href={`/admin/venues/${venueId}/events/${item.id}`}
+                            prefetch={false}
                             className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-strong bg-void-3 px-3.5 py-2.5 text-sm transition-colors hover:border-amber-border"
                         >
                             <span>

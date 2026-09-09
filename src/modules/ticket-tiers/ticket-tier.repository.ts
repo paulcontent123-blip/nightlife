@@ -8,6 +8,17 @@ import type {
 } from "./ticket-tier.types";
 
 const TICKET_TIERS_TABLE = "ticket_tiers";
+const TICKET_TIER_COLUMNS = [
+    "id",
+    "event_id",
+    "name",
+    "price",
+    "quantity",
+    "sold",
+    "includes",
+    "sale_starts_at",
+    "sale_ends_at",
+].join(",");
 
 export class TicketTierRepository {
     private get supabase() {
@@ -17,7 +28,7 @@ export class TicketTierRepository {
     async listByEvent(eventId: string) {
         const { data, error } = await this.supabase
             .from(TICKET_TIERS_TABLE)
-            .select("*")
+            .select(TICKET_TIER_COLUMNS)
             .eq("event_id", eventId)
             .order("price", { ascending: true })
             .returns<TicketTierRow[]>();

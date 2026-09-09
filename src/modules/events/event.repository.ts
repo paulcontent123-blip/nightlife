@@ -1,9 +1,25 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AuthException } from "@/modules/auth/auth.errors";
-import { mapEvent } from "./event.mapper";
-import type { EventListQuery, EventRecord, EventRow } from "./event.types";
+import { mapEvent, mapEventList } from "./event.mapper";
+import type { EventListQuery, EventListRow, EventRecord, EventRow } from "./event.types";
 
 const EVENTS_TABLE = "events";
+const EVENT_LIST_COLUMNS = [
+    "id",
+    "slug",
+    "venue_id",
+    "title",
+    "event_date",
+    "start_time",
+    "end_time",
+    "genre",
+    "thumbnail_url",
+    "is_free",
+    "age_restriction",
+    "total_capacity",
+    "is_active",
+    "created_at",
+].join(",");
 
 type UpdateEventRecord = Partial<EventRecord>;
 
@@ -60,12 +76,24 @@ export class EventRepository {
     }
 
     async listPublic(query: EventListQuery) {
+        return this.listPublicQuery(query);
+    }
+
+    async listPublicByVenue(venueId: string, query: EventListQuery) {
+        return this.listPublicQuery(query, venueId);
+    }
+
+    private async listPublicQuery(query: EventListQuery, venueId?: string) {
         const from = (query.page - 1) * query.limit;
         const to = from + query.limit - 1;
         let request = this.supabase
             .from(EVENTS_TABLE)
-            .select("*", { count: "exact" })
+            .select(EVENT_LIST_COLUMNS, { count: "planned" })
             .eq("is_active", true);
+
+        if (venueId) {
+            request = request.eq("venue_id", venueId);
+        }
 
         if (query.date_from) {
             request = request.gte("event_date", query.date_from);
@@ -83,7 +111,7 @@ export class EventRepository {
             .order("event_date", { ascending: true })
             .order("start_time", { ascending: true })
             .range(from, to)
-            .returns<EventRow[]>();
+            .returns<EventListRow[]>();
 
         if (error) {
             throw new AuthException(500, "DATABASE_ERROR", error.message);
@@ -92,7 +120,7 @@ export class EventRepository {
         const total = count ?? 0;
 
         return {
-            items: (data ?? []).map(mapEvent),
+            items: (data ?? []).map(mapEventList),
             pagination: {
                 page: query.page,
                 limit: query.limit,
@@ -100,13 +128,6 @@ export class EventRepository {
                 total_pages: Math.ceil(total / query.limit),
             },
         };
-    }
-
-    async listPublicByVenue(venueId: string, query: EventListQuery) {
-        return this.listByVenue(venueId, {
-            ...query,
-            is_active: true,
-        });
     }
 
     async findById(venueId: string, eventId: string) {

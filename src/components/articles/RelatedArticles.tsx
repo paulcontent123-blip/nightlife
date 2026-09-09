@@ -1,19 +1,21 @@
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
-import type { ArticleListItem, Paginated } from "@/lib/api/types";
+import { ArticleListService } from "@/modules/articles/article-list.service";
+import { AuthException } from "@/modules/auth/auth.errors";
+import type { ArticleListItem } from "@/lib/api/types";
 import { ArticleCard } from "@/components/articles/ArticleCard";
+
+const articleListService = new ArticleListService();
 
 export async function RelatedArticles({ category, excludeSlug }: { category: string; excludeSlug: string }) {
     let items: ArticleListItem[] = [];
 
     try {
-        const result = await serverFetch<Paginated<ArticleListItem>>(
-            `/api/v1/bai-viet?category=${encodeURIComponent(category)}&limit=4`
+        const result = await articleListService.listPublicArticles(
+            new URLSearchParams({ category, limit: "4" })
         );
 
         items = result.items.filter((article) => article.slug !== excludeSlug).slice(0, 3);
     } catch (error) {
-        if (!(error instanceof ApiError)) {
+        if (!(error instanceof AuthException)) {
             throw error;
         }
     }

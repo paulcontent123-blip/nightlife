@@ -22,8 +22,12 @@ export default async function AdminForumPostDetailPage({ params }: PageProps) {
     let replies: ForumReply[] = [];
 
     try {
-        post = await serverFetch<ForumPost>(`/api/v1/admin/forum/posts/${id}`);
-        const repliesResult = await serverFetch<{ items: ForumReply[] }>(`/api/v1/admin/forum/posts/${id}/replies`);
+        // Replies only need the post id, not the post's own data — fetch both concurrently.
+        const [postResult, repliesResult] = await Promise.all([
+            serverFetch<ForumPost>(`/api/v1/admin/forum/posts/${id}`),
+            serverFetch<{ items: ForumReply[] }>(`/api/v1/admin/forum/posts/${id}/replies`),
+        ]);
+        post = postResult;
         replies = repliesResult.items;
     } catch (error) {
         if (error instanceof ApiError && error.status === 404) {

@@ -11,6 +11,7 @@ export function HappyHourDealCard({ deal, index }: { deal: PublicDeal; index: nu
     return (
         <Link
             href={`/venues/${deal.venue.slug}`}
+            prefetch={false}
             className="block overflow-hidden rounded-xl border border-border bg-void-2 transition-colors hover:border-amber-border"
         >
             <div className={["h-1 bg-gradient-to-r", accent].join(" ")} />

@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AuthException } from "@/modules/auth/auth.errors";
-import { mapVenue } from "./venue.mapper";
+import { mapVenue, mapVenueList } from "./venue.mapper";
 import type {
     VenueAvailabilityQuery,
     VenueBookingRow,
@@ -8,6 +8,7 @@ import type {
     VenueListQuery,
     VenueNearbyQuery,
     VenueReviewRow,
+    VenueListRow,
     VenueTableRow,
     VenueRow,
 } from "./venue.types";
@@ -21,6 +22,28 @@ const BLOCKING_BOOKING_STATUSES = ["pending", "confirmed", "seated"];
 const OPEN_NOW_FILTER_FETCH_LIMIT = 5000;
 const VIETNAM_TIMEZONE = "Asia/Ho_Chi_Minh";
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
+// Venue cards only need summary fields and a thumbnail. The full images array
+// is loaded by the venue detail endpoint when it is actually needed.
+const VENUE_LIST_COLUMNS = [
+    "id",
+    "slug",
+    "name",
+    "type",
+    "district",
+    "city",
+    "cover_charge",
+    "price_range",
+    "features",
+    "thumbnail_url",
+    "is_verified",
+    "is_active",
+    "avg_rating",
+    "total_reviews",
+    "total_bookings",
+    "open_hours",
+    "created_at",
+].join(",");
 
 type DayKey = typeof DAY_KEYS[number];
 
@@ -60,7 +83,9 @@ export class VenueRepository {
         const shouldFilterOpenNow = query.is_open_now === true;
         let request = this.supabase
             .from(VENUES_TABLE)
-            .select("*", { count: "exact" });
+            // Planner count is enough for public pagination and avoids an exact
+            // count scan on every cache miss. Admin lists keep exact totals.
+            .select(VENUE_LIST_COLUMNS, { count: publicOnly ? "planned" : "exact" });
 
         if (publicOnly) {
             request = request.eq("is_active", true);
@@ -102,7 +127,7 @@ export class VenueRepository {
             ? request.range(0, OPEN_NOW_FILTER_FETCH_LIMIT - 1)
             : request.range(from, to);
 
-        const { data, error, count } = await request.returns<VenueRow[]>();
+        const { data, error, count } = await request.returns<VenueListRow[]>();
 
         if (error) {
             throw new AuthException(500, "DATABASE_ERROR", error.message);
@@ -117,7 +142,7 @@ export class VenueRepository {
         const total = shouldFilterOpenNow ? filteredRows.length : count ?? 0;
 
         return {
-            items: rows.map(mapVenue),
+            items: rows.map(mapVenueList),
             pagination: {
                 page: query.page,
                 limit: query.limit,

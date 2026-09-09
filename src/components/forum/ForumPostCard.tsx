@@ -7,6 +7,7 @@ export function ForumPostCard({ post }: { post: ForumPost }) {
     return (
         <Link
             href={`/forum/${post.id}`}
+            prefetch={false}
             className="block rounded-xl border border-border bg-void-2 p-4 transition-colors hover:border-amber-border"
         >
             <div className="mb-2 flex flex-wrap items-center gap-1.5">

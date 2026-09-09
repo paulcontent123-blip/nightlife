@@ -144,6 +144,24 @@ export interface Venue {
     created_at: string;
 }
 
+export interface VenueListItem {
+    id: string;
+    slug: string;
+    name: string;
+    type: VenueType;
+    district: string | null;
+    city: string;
+    pricing: {
+        cover_charge: number;
+        price_range: VenuePriceRange;
+    };
+    features: string[];
+    media: { thumbnail_url: string | null };
+    status: { is_verified: boolean; is_active: boolean };
+    metrics: { avg_rating: number | null; total_reviews: number; total_bookings: number };
+    created_at: string;
+}
+
 export interface VenueTable {
     id: string;
     table_name: string;

@@ -68,7 +68,7 @@ function FooterLinkItem({ href, label }: FooterLink) {
     }
 
     return (
-        <Link href={href} className={className}>
+        <Link href={href} prefetch={false} className={className}>
             {label}
         </Link>
     );

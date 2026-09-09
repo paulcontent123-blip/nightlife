@@ -15,10 +15,12 @@ const PAYMENT_METHODS: Array<{ value: "vnpay" | "momo"; label: string }> = [
     { value: "momo", label: "MoMo" },
 ];
 
-export function TicketPurchaseWidget({ slug }: { slug: string }) {
-    const [tiers, setTiers] = useState<TicketTier[] | null>(null);
+export function TicketPurchaseWidget({ slug, initialTiers }: { slug: string; initialTiers?: TicketTier[] }) {
+    const [tiers, setTiers] = useState<TicketTier[] | null>(initialTiers ?? null);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
+    const [selectedTierId, setSelectedTierId] = useState<string | null>(
+        initialTiers?.find((tier) => tier.available > 0)?.id ?? initialTiers?.[0]?.id ?? null
+    );
     const [quantity, setQuantity] = useState(1);
     const [paymentMethod, setPaymentMethod] = useState<"vnpay" | "momo">("vnpay");
     const [submitting, setSubmitting] = useState(false);
@@ -26,6 +28,10 @@ export function TicketPurchaseWidget({ slug }: { slug: string }) {
     const [requiresLogin, setRequiresLogin] = useState(false);
 
     useEffect(() => {
+        if (initialTiers !== undefined) {
+            return;
+        }
+
         let cancelled = false;
 
         clientFetch<{ items: TicketTier[] }>(`/api/v1/events/${slug}/ticket-tiers`)
@@ -42,7 +48,7 @@ export function TicketPurchaseWidget({ slug }: { slug: string }) {
         return () => {
             cancelled = true;
         };
-    }, [slug]);
+    }, [slug, initialTiers]);
 
     const selectedTier = tiers?.find((tier) => tier.id === selectedTierId) ?? null;
 

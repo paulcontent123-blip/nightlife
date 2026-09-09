@@ -1,12 +1,7 @@
 import { AuthException } from "@/modules/auth/auth.errors";
 import type { UserProfile } from "@/modules/auth/auth.types";
-import {
-    deleteReviewImageByUrl,
-    uploadReviewImage,
-} from "@/lib/cloudinary/review-images";
 import { incrementVenueListCacheVersion } from "@/modules/venues/venue-cache";
 import { VenueRepository } from "@/modules/venues/venue.repository";
-import { PassportService } from "@/modules/passport/passport.service";
 import { VenueReviewRepository } from "./venue-review.repository";
 import {
     CreateVenueReviewSchema,
@@ -19,8 +14,7 @@ const MAX_REVIEW_IMAGES = 10;
 export class VenueReviewService {
     constructor(
         private repository = new VenueReviewRepository(),
-        private venueRepository = new VenueRepository(),
-        private passportService = new PassportService()
+        private venueRepository = new VenueRepository()
     ) { }
 
     // Public review list for a venue slug, with pagination and optional rating sort.
@@ -53,6 +47,7 @@ export class VenueReviewService {
         user: UserProfile,
         files: File[]
     ) {
+        const { deleteReviewImageByUrl, uploadReviewImage } = await import("@/lib/cloudinary/review-images");
         const venue = await this.getPublicVenue(slug);
         const dto = CreateVenueReviewSchema.parse(input);
 
@@ -112,7 +107,9 @@ export class VenueReviewService {
 
         await this.repository.refreshVenueRatingSummary(venueId);
         await incrementVenueListCacheVersion();
-        await this.passportService.awardVenueReviewPoints({
+        const { PassportService } = await import("@/modules/passport/passport.service");
+
+        await new PassportService().awardVenueReviewPoints({
             userId: user.id,
             reviewId: review.id,
         });

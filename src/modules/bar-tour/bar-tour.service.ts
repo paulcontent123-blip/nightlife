@@ -1,10 +1,13 @@
-import type { DealRow } from "@/modules/deals/deal.types";
-import type { EventRow } from "@/modules/events/event.types";
-import type { VenueRow } from "@/modules/venues/venue.types";
+import { redisGetVersionAndJson, redisJsonSet } from "@/lib/redis/server";
+import { BAR_TOUR_CACHE_VERSION_KEY } from "./bar-tour-cache";
 import { BarTourRepository } from "./bar-tour.repository";
 import type {
     BarTourRecommendationDTO,
     BarTourRecommendationQuery,
+    BarTourRecommendationResult,
+    BarTourDealRow,
+    BarTourEventRow,
+    BarTourVenueRow,
     BarTourVenueSuggestion,
     FoodSuggestion,
 } from "./bar-tour.types";
@@ -12,6 +15,13 @@ import {
     BarTourRecommendationBodySchema,
     BarTourRecommendationQuerySchema,
 } from "./bar-tour.validator";
+
+const CACHE_TTL_SECONDS = 300;
+
+interface CachedBarTourRecommendationEntry {
+    version: number;
+    data: BarTourRecommendationResult;
+}
 
 const KEYWORD_ALIASES: Record<string, string[]> = {
     birthday: ["birthday", "party", "celebrate", "celebration", "sinh nhat"],
@@ -49,6 +59,45 @@ export class BarTourService {
     }
 
     private async recommend(query: BarTourRecommendationQuery) {
+        return this.getCachedRecommendation(query);
+    }
+
+    private async getCachedRecommendation(query: BarTourRecommendationQuery) {
+        let version = 0;
+        let redisAvailable = false;
+
+        try {
+            const cached = await redisGetVersionAndJson<CachedBarTourRecommendationEntry>(
+                BAR_TOUR_CACHE_VERSION_KEY,
+                this.createCacheKey(query)
+            );
+            version = cached.version;
+            redisAvailable = true;
+
+            if (cached.value && cached.value.version === version) {
+                return cached.value.data;
+            }
+        } catch {
+            // Redis is optional; recommendations can be loaded from the database.
+        }
+
+        const data = await this.buildRecommendation(query);
+
+        // Avoid another Redis request when the cache read already failed.
+        if (!redisAvailable) {
+            return data;
+        }
+
+        try {
+            await redisJsonSet(this.createCacheKey(query), { version, data }, CACHE_TTL_SECONDS);
+        } catch {
+            // Cache failures must not block recommendations.
+        }
+
+        return data;
+    }
+
+    private async buildRecommendation(query: BarTourRecommendationQuery): Promise<BarTourRecommendationResult> {
         const tokens = createKeywordTokens(query.keyword);
         const candidates = await this.repository.listVenueCandidates(query);
         const scoredVenues = candidates
@@ -94,8 +143,12 @@ export class BarTourService {
         };
     }
 
+    private createCacheKey(query: BarTourRecommendationQuery) {
+        return `cache:bar-tour:recommendations:${JSON.stringify(query)}`;
+    }
+
     private scoreVenue(
-        venue: VenueRow,
+        venue: BarTourVenueRow,
         query: BarTourRecommendationQuery,
         tokens: string[]
     ) {
@@ -162,12 +215,12 @@ export class BarTourService {
 
     private createVenueSuggestion(
         item: {
-            venue: VenueRow;
+            venue: BarTourVenueRow;
             score: number;
             matchedKeywords: string[];
         },
-        dealsByVenueId: Map<string, DealRow[]>,
-        eventsByVenueId: Map<string, EventRow[]>
+        dealsByVenueId: Map<string, BarTourDealRow[]>,
+        eventsByVenueId: Map<string, BarTourEventRow[]>
     ): BarTourVenueSuggestion {
         const venue = item.venue;
         const deals = dealsByVenueId.get(venue.id) ?? [];
@@ -277,7 +330,7 @@ function groupByVenueId<T extends { venue_id: string }>(items: T[]) {
     return map;
 }
 
-function createVenueReason(venue: VenueRow, matchedKeywords: string[], dealCount: number, eventCount: number) {
+function createVenueReason(venue: BarTourVenueRow, matchedKeywords: string[], dealCount: number, eventCount: number) {
     const reasons = [
         `${venue.name} matches ${venue.type.replace(/_/g, " ")}`,
     ];

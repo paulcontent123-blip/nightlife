@@ -1,11 +1,11 @@
 import { AuthException } from "@/modules/auth/auth.errors";
-import { ForumNotificationService } from "@/modules/notifications/forum-notification.service";
+import { incrementForumListCacheVersion } from "./forum-cache";
+import { ForumListService } from "./forum-list.service";
 import { ForumRepository } from "./forum.repository";
 import {
     AdminForumPostListQuerySchema,
     CreateForumPostSchema,
     CreateForumReplySchema,
-    ForumPostListQuerySchema,
     ForumReportListQuerySchema,
     ModerateForumPostSchema,
     ModerateForumReplySchema,
@@ -22,15 +22,16 @@ import type {
 } from "./forum.types";
 
 export class ForumService {
+    private readonly forumListService: ForumListService;
+
     constructor(
-        private repository = new ForumRepository(),
-        private forumNotificationService = new ForumNotificationService()
-    ) { }
+        private repository = new ForumRepository()
+    ) {
+        this.forumListService = new ForumListService(repository);
+    }
 
     async listPublicPosts(searchParams: URLSearchParams) {
-        const query = ForumPostListQuerySchema.parse(Object.fromEntries(searchParams));
-
-        return this.repository.listPublicPosts(query);
+        return this.forumListService.listPublicPosts(searchParams);
     }
 
     async listAdminPosts(searchParams: URLSearchParams) {
@@ -42,7 +43,7 @@ export class ForumService {
     async createPost(input: CreateForumPostDTO, userId: string) {
         const dto = CreateForumPostSchema.parse(input);
 
-        return this.repository.createPost({
+        const post = await this.repository.createPost({
             user_id: userId,
             title: dto.title,
             content: dto.content,
@@ -52,17 +53,27 @@ export class ForumService {
             is_pinned: false,
             is_approved: true,
         });
+
+        await incrementForumListCacheVersion();
+
+        return post;
     }
 
     async getPostDetail(postId: string) {
-        const post = await this.repository.findPublicPostById(postId);
+        const [post, replies] = await Promise.all([
+            this.repository.findPublicPostById(postId),
+            this.repository.listApprovedReplies(postId),
+        ]);
 
         if (!post) {
             throw new AuthException(404, "FORUM_POST_NOT_FOUND");
         }
 
-        await this.repository.incrementViewCount(postId);
-        const replies = await this.repository.listApprovedReplies(postId);
+        // View tracking is non-critical for rendering; do not hold the page on
+        // a second database read/update round trip.
+        void this.repository.incrementViewCount(postId).catch((error) => {
+            console.error("Forum view count update failed", { post_id: postId, error });
+        });
 
         return {
             ...post,
@@ -95,6 +106,8 @@ export class ForumService {
             content: dto.content,
             is_approved: true,
         });
+
+        await incrementForumListCacheVersion();
 
         await this.notifyNewReply({ post, reply, parentReply });
 
@@ -139,13 +152,21 @@ export class ForumService {
 
         const dto = ModerateForumPostSchema.parse(input);
 
-        return this.repository.updatePost(postId, dto);
+        const post = await this.repository.updatePost(postId, dto);
+
+        await incrementForumListCacheVersion();
+
+        return post;
     }
 
     async deletePost(postId: string) {
         await this.ensurePostExists(postId);
 
-        return this.repository.deletePost(postId);
+        const post = await this.repository.deletePost(postId);
+
+        await incrementForumListCacheVersion();
+
+        return post;
     }
 
     async moderateReply(replyId: string, input: ModerateForumReplyDTO) {
@@ -159,7 +180,11 @@ export class ForumService {
     async deleteReply(replyId: string) {
         await this.ensureReplyExists(replyId);
 
-        return this.repository.deleteReply(replyId);
+        const reply = await this.repository.deleteReply(replyId);
+
+        await incrementForumListCacheVersion();
+
+        return reply;
     }
 
     async listReports(searchParams: URLSearchParams) {
@@ -207,7 +232,9 @@ export class ForumService {
         } | null;
     }) {
         try {
-            return await this.forumNotificationService.sendNewReply(input);
+            const { ForumNotificationService } = await import("@/modules/notifications/forum-notification.service");
+
+            return await new ForumNotificationService().sendNewReply(input);
         } catch (error) {
             console.error("Forum reply push failed", {
                 post_id: input.post.id,

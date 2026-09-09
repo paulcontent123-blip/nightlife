@@ -2,7 +2,23 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 const IMAGE_BLOCK_PATTERN = /^!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)$/;
-const LINK_PATTERN = /\[([^\]]+)\]\(([^)\s]+)\)/g;
+const TABLE_SEPARATOR_PATTERN = /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/;
+const UNORDERED_LIST_ITEM_PATTERN = /^[-*+]\s+(.+)$/;
+const ORDERED_LIST_ITEM_PATTERN = /^\d+[.)]\s+(.+)$/;
+const BLOCKQUOTE_LINE_PATTERN = /^>\s?(.*)$/;
+
+type TableAlignment = "left" | "center" | "right";
+
+interface ParsedTable {
+    headers: string[];
+    rows: string[][];
+    alignments: TableAlignment[];
+}
+
+interface ParsedList {
+    ordered: boolean;
+    items: string[];
+}
 
 export function MarkdownContent({ content }: { content: string }) {
     const blocks = content.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
@@ -38,6 +54,47 @@ function renderBlock(block: string, index: number) {
         );
     }
 
+    const lines = block.split("\n").map((line) => line.trimEnd());
+    const table = parseTable(lines);
+
+    if (table) {
+        return (
+            <div key={index} className="my-6 overflow-x-auto rounded-lg border border-border">
+                <table className="w-full min-w-[520px] border-collapse text-left text-sm text-muted">
+                    <thead className="bg-white/5 text-white">
+                        <tr>
+                            {table.headers.map((header, headerIndex) => (
+                                <th
+                                    key={headerIndex}
+                                    scope="col"
+                                    align={table.alignments[headerIndex]}
+                                    className="border-b border-border px-4 py-3 font-semibold"
+                                >
+                                    {renderInline(header)}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {table.rows.map((row, rowIndex) => (
+                            <tr key={rowIndex} className="border-b border-border last:border-b-0">
+                                {table.headers.map((_, cellIndex) => (
+                                    <td
+                                        key={cellIndex}
+                                        align={table.alignments[cellIndex]}
+                                        className="px-4 py-3 align-top"
+                                    >
+                                        {renderInline(row[cellIndex] ?? "")}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    }
+
     if (block.startsWith("### ")) {
         return (
             <h3 key={index} className="pt-2 font-display text-xl font-bold text-white">
@@ -62,18 +119,35 @@ function renderBlock(block: string, index: number) {
         );
     }
 
-    const listItems = block
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line.startsWith("- "));
+    const list = parseList(lines);
 
-    if (listItems.length > 0 && listItems.length === block.split("\n").filter(Boolean).length) {
+    if (list) {
+        const ListTag = list.ordered ? "ol" : "ul";
+
         return (
-            <ul key={index} className="list-disc space-y-2 pl-5 text-base leading-8 text-muted">
-                {listItems.map((item, itemIndex) => (
-                    <li key={itemIndex}>{renderInline(item.replace(/^-\s+/, ""))}</li>
+            <ListTag
+                key={index}
+                className={[
+                    list.ordered ? "list-decimal" : "list-disc",
+                    "space-y-2 pl-5 text-base leading-8 text-muted",
+                ].join(" ")}
+            >
+                {list.items.map((item, itemIndex) => (
+                    <li key={itemIndex}>{renderInline(item)}</li>
                 ))}
-            </ul>
+            </ListTag>
+        );
+    }
+
+    const quoteLines = parseBlockquote(lines);
+
+    if (quoteLines) {
+        return (
+            <blockquote key={index} className="border-l-2 border-amber pl-4 text-base italic leading-8 text-muted">
+                {quoteLines.map((line, lineIndex) => (
+                    <p key={lineIndex}>{renderInline(line)}</p>
+                ))}
+            </blockquote>
         );
     }
 
@@ -84,12 +158,90 @@ function renderBlock(block: string, index: number) {
     );
 }
 
+function parseTable(lines: string[]): ParsedTable | null {
+    if (lines.length < 2 || !TABLE_SEPARATOR_PATTERN.test(lines[1])) {
+        return null;
+    }
+
+    const headers = splitTableRow(lines[0]);
+    const separatorCells = splitTableRow(lines[1]);
+
+    if (headers.length < 2 || separatorCells.length !== headers.length) {
+        return null;
+    }
+
+    return {
+        headers,
+        rows: lines.slice(2)
+            .map(splitTableRow)
+            .filter((row) => row.length > 0),
+        alignments: separatorCells.map(getTableAlignment),
+    };
+}
+
+function splitTableRow(line: string) {
+    const normalized = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+
+    return normalized.split("|").map((cell) => cell.trim());
+}
+
+function getTableAlignment(separator: string): TableAlignment {
+    const trimmed = separator.trim();
+
+    if (trimmed.startsWith(":") && trimmed.endsWith(":")) {
+        return "center";
+    }
+
+    if (trimmed.endsWith(":")) {
+        return "right";
+    }
+
+    return "left";
+}
+
+function parseList(lines: string[]): ParsedList | null {
+    if (lines.length === 0) {
+        return null;
+    }
+
+    const unorderedItems = lines.map((line) => line.trim().match(UNORDERED_LIST_ITEM_PATTERN));
+
+    if (unorderedItems.every(Boolean)) {
+        return {
+            ordered: false,
+            items: unorderedItems.map((match) => match?.[1] ?? ""),
+        };
+    }
+
+    const orderedItems = lines.map((line) => line.trim().match(ORDERED_LIST_ITEM_PATTERN));
+
+    if (orderedItems.every(Boolean)) {
+        return {
+            ordered: true,
+            items: orderedItems.map((match) => match?.[1] ?? ""),
+        };
+    }
+
+    return null;
+}
+
+function parseBlockquote(lines: string[]) {
+    const matches = lines.map((line) => line.match(BLOCKQUOTE_LINE_PATTERN));
+
+    if (!matches.every(Boolean)) {
+        return null;
+    }
+
+    return matches.map((match) => match?.[1] ?? "");
+}
+
 function renderInline(value: string) {
     const nodes: ReactNode[] = [];
     let lastIndex = 0;
     let match: RegExpExecArray | null;
+    const linkPattern = /\[([^\]]+)\]\(([^)\s]+)\)/g;
 
-    while ((match = LINK_PATTERN.exec(value)) !== null) {
+    while ((match = linkPattern.exec(value)) !== null) {
         const [raw, text, href] = match;
 
         if (match.index > lastIndex) {
@@ -110,7 +262,7 @@ function renderInline(value: string) {
 function renderLink(text: string, href: string, key: number) {
     if (href.startsWith("/")) {
         return (
-            <Link key={key} href={href} className="font-semibold text-amber hover:text-amber-2">
+            <Link key={key} href={href} prefetch={false} className="font-semibold text-amber hover:text-amber-2">
                 {text}
             </Link>
         );

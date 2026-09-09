@@ -19,8 +19,33 @@ import type {
 const FORUM_POSTS_TABLE = "forum_posts";
 const FORUM_REPLIES_TABLE = "forum_replies";
 const FORUM_REPORTS_TABLE = "forum_reports";
+const FORUM_POST_LIST_COLUMNS = [
+    "id",
+    "user_id",
+    "title",
+    "content",
+    "city",
+    "tags",
+    "venue_id",
+    "is_pinned",
+    "is_approved",
+    "view_count",
+    "reply_count",
+    "created_at",
+].join(",");
 
-type PostListRequest = ReturnType<ReturnType<ReturnType<typeof createAdminClient>["from"]>["select"]>;
+type PostListRequest = {
+    eq(column: string, value: unknown): PostListRequest;
+    contains(column: string, value: unknown): PostListRequest;
+    order(column: string, options?: Record<string, unknown>): PostListRequest;
+    range(from: number, to: number): PostListRequest & {
+        returns<T>(): Promise<{
+            data: T | null;
+            error: { message: string } | null;
+            count: number | null;
+        }>;
+    };
+};
 
 export class ForumRepository {
     private get supabase() {
@@ -28,7 +53,7 @@ export class ForumRepository {
     }
 
     async listPublicPosts(query: ForumPostListQuery) {
-        let request = this.createPostListQuery(query)
+        let request = this.createPostListQuery(query, FORUM_POST_LIST_COLUMNS, "planned")
             .eq("is_approved", true);
 
         request = this.applyPostSort(request, query.sort);
@@ -37,7 +62,7 @@ export class ForumRepository {
     }
 
     async listAdminPosts(query: AdminForumPostListQuery) {
-        let request = this.createPostListQuery(query);
+        let request = this.createPostListQuery(query, "*", "exact");
 
         if (query.status === "approved") {
             request = request.eq("is_approved", true);
@@ -317,10 +342,14 @@ export class ForumRepository {
         return mapForumReport(data);
     }
 
-    private createPostListQuery(query: ForumPostListQuery) {
+    private createPostListQuery(
+        query: ForumPostListQuery,
+        columns: string,
+        count: "exact" | "planned"
+    ) {
         let request = this.supabase
             .from(FORUM_POSTS_TABLE)
-            .select("*", { count: "exact" });
+            .select(columns, { count }) as unknown as PostListRequest;
 
         if (query.city) {
             request = request.eq("city", query.city);

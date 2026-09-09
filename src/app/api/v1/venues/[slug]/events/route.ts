@@ -1,5 +1,5 @@
 import { failure, success } from "@/modules/auth/auth.response";
-import { EventService } from "@/modules/events/event.service";
+import { EventListService } from "@/modules/events/event-list.service";
 
 interface RouteContext {
     params: Promise<{
@@ -7,13 +7,13 @@ interface RouteContext {
     }>;
 }
 
-const eventService = new EventService();
+const eventListService = new EventListService();
 
 export async function GET(request: Request, context: RouteContext) {
     try {
         const { slug } = await context.params;
         const url = new URL(request.url);
-        const data = await eventService.listPublicVenueEvents(slug, url.searchParams);
+        const data = await eventListService.listPublicVenueEvents(slug, url.searchParams);
 
         return success(data);
     } catch (error) {

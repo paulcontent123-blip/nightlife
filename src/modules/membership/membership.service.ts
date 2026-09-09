@@ -7,7 +7,6 @@ import {
 import { createSiteUrl } from "@/config/site";
 import { AuthException } from "@/modules/auth/auth.errors";
 import type { UserProfile } from "@/modules/auth/auth.types";
-import { MembershipNotificationService } from "@/modules/notifications/membership-notification.service";
 import type { PaymentIpnDTO, PaymentProvider } from "@/modules/payments/payment.types";
 import { MEMBERSHIP_TIERS } from "./membership.constants";
 import { MembershipRepository } from "./membership.repository";
@@ -24,8 +23,7 @@ import type {
 
 export class MembershipService {
     constructor(
-        private repository = new MembershipRepository(),
-        private notificationService = new MembershipNotificationService()
+        private repository = new MembershipRepository()
     ) { }
 
     listTiers() {
@@ -135,7 +133,8 @@ export class MembershipService {
             payment_method: provider,
         });
 
-        await this.notificationService.sendPaymentReceived(paymentReceivedSubscription);
+        const { MembershipNotificationService } = await import("@/modules/notifications/membership-notification.service");
+        await new MembershipNotificationService().sendPaymentReceived(paymentReceivedSubscription);
 
         return {
             provider,
@@ -177,7 +176,8 @@ export class MembershipService {
             confirmed_at: startsAt,
         });
 
-        await this.notificationService.sendActivated(activeSubscription);
+        const { MembershipNotificationService } = await import("@/modules/notifications/membership-notification.service");
+        await new MembershipNotificationService().sendActivated(activeSubscription);
 
         return activeSubscription;
     }

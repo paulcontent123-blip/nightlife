@@ -20,6 +20,7 @@ export function NavLinks({ links }: { links: NavLink[] }) {
                     <Link
                         key={link.href}
                         href={link.href}
+                        prefetch={false}
                         className={[
                             "rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors",
                             isActive ? "bg-amber-wash text-amber" : "text-muted hover:bg-white/5 hover:text-white",

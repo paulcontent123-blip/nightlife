@@ -12,7 +12,7 @@ export function TicketCard({ ticket }: { ticket: Ticket }) {
             </div>
             {ticket.event ? (
                 <>
-                    <Link href={`/events/${ticket.event.slug}`} className="font-display text-[15px] font-bold text-white hover:text-amber">
+                    <Link href={`/events/${ticket.event.slug}`} prefetch={false} className="font-display text-[15px] font-bold text-white hover:text-amber">
                         {ticket.event.title}
                     </Link>
                     <p className="mt-0.5 text-xs text-muted">

@@ -1,23 +1,30 @@
 import type { Metadata } from "next";
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
-import type { Paginated, PublicDeal } from "@/lib/api/types";
+import { AuthException } from "@/modules/auth/auth.errors";
+import { getCurrentUserAvailabilityPerks } from "@/modules/membership/membership-availability-access";
+import { DealService } from "@/modules/deals/deal.service";
+import type { PublicDeal } from "@/lib/api/types";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HappyHourDealCard } from "@/components/deals/HappyHourDealCard";
 
 export const metadata: Metadata = { title: "Happy Hour & Deals · Nightlife.vn" };
 
+const dealService = new DealService();
+
 export default async function HappyHourPage() {
     let deals: PublicDeal[] = [];
     let loadError = false;
 
     try {
-        const result = await serverFetch<Paginated<PublicDeal>>("/api/v1/deals?limit=50");
+        const perks = await getCurrentUserAvailabilityPerks();
+        const result = await dealService.listPublicDeals(
+            new URLSearchParams({ limit: "50" }),
+            perks.can_view_exclusive_deals
+        );
 
         deals = result.items;
     } catch (error) {
-        if (error instanceof ApiError) {
+        if (error instanceof AuthException) {
             loadError = true;
         } else {
             throw error;

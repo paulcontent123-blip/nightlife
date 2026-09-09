@@ -1,5 +1,10 @@
 import { AuthException } from "@/modules/auth/auth.errors";
+import { redisGetVersionAndJson, redisJsonSet } from "@/lib/redis/server";
 import { EventRepository } from "@/modules/events/event.repository";
+import {
+    incrementTicketTierListCacheVersion,
+    TICKET_TIER_LIST_CACHE_VERSION_KEY,
+} from "./ticket-tier-cache";
 import { TicketTierRepository } from "./ticket-tier.repository";
 import {
     CreateTicketTierSchema,
@@ -10,6 +15,15 @@ import type {
     UpdateTicketTierDTO,
 } from "./ticket-tier.types";
 
+const TICKET_TIER_CACHE_TTL_SECONDS = 60;
+
+type PublicTicketTiers = Awaited<ReturnType<TicketTierRepository["listByEvent"]>>;
+
+interface CachedPublicTicketTiers {
+    version: number;
+    items: PublicTicketTiers;
+}
+
 export class TicketTierService {
     constructor(
         private repository = new TicketTierRepository(),
@@ -17,13 +31,46 @@ export class TicketTierService {
     ) { }
 
     async listPublicEventTicketTiers(eventSlug: string) {
+        const cacheKey = `cache:ticket-tiers:list:${eventSlug}`;
+        let version = 0;
+        let redisAvailable = false;
+
+        try {
+            const cached = await redisGetVersionAndJson<CachedPublicTicketTiers>(
+                TICKET_TIER_LIST_CACHE_VERSION_KEY,
+                cacheKey
+            );
+            version = cached.version;
+            redisAvailable = true;
+
+            if (cached.value && cached.value.version === version) {
+                return cached.value.items;
+            }
+        } catch {
+            // Redis is optional; the database remains the source of truth.
+        }
+
         const event = await this.eventRepository.findPublicBySlug(eventSlug);
 
         if (!event) {
             throw new AuthException(404, "EVENT_NOT_FOUND");
         }
 
-        return this.repository.listByEvent(event.id);
+        const items = await this.repository.listByEvent(event.id);
+
+        if (redisAvailable) {
+            try {
+                await redisJsonSet(
+                    cacheKey,
+                    { version, items },
+                    TICKET_TIER_CACHE_TTL_SECONDS
+                );
+            } catch {
+                // Cache failures must not block the public ticket-tier list.
+            }
+        }
+
+        return items;
     }
 
     async listAdminEventTicketTiers(eventId: string) {
@@ -37,7 +84,7 @@ export class TicketTierService {
 
         const dto = CreateTicketTierSchema.parse(input);
 
-        return this.repository.create({
+        const tier = await this.repository.create({
             event_id: eventId,
             name: dto.name,
             price: dto.price,
@@ -46,6 +93,10 @@ export class TicketTierService {
             sale_starts_at: dto.sale_starts_at ?? null,
             sale_ends_at: dto.sale_ends_at ?? null,
         });
+
+        await incrementTicketTierListCacheVersion();
+
+        return tier;
     }
 
     async updateTicketTier(id: string, input: UpdateTicketTierDTO) {
@@ -60,7 +111,7 @@ export class TicketTierService {
             );
         }
 
-        return this.repository.update(id, {
+        const updatedTier = await this.repository.update(id, {
             ...(dto.name !== undefined ? { name: dto.name } : {}),
             ...(dto.price !== undefined ? { price: dto.price } : {}),
             ...(dto.quantity !== undefined ? { quantity: dto.quantity } : {}),
@@ -68,6 +119,10 @@ export class TicketTierService {
             ...(dto.sale_starts_at !== undefined ? { sale_starts_at: dto.sale_starts_at } : {}),
             ...(dto.sale_ends_at !== undefined ? { sale_ends_at: dto.sale_ends_at } : {}),
         });
+
+        await incrementTicketTierListCacheVersion();
+
+        return updatedTier;
     }
 
     async deleteTicketTier(id: string) {
@@ -77,7 +132,11 @@ export class TicketTierService {
             throw new AuthException(409, "TICKET_TIER_HAS_SALES");
         }
 
-        return this.repository.delete(id);
+        const deletedTier = await this.repository.delete(id);
+
+        await incrementTicketTierListCacheVersion();
+
+        return deletedTier;
     }
 
     private async getExistingTicketTier(id: string) {

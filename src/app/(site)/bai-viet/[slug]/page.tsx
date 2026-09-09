@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { cache } from "react";
 import { ArticleService } from "@/modules/articles/article.service";
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
+import { AuthException } from "@/modules/auth/auth.errors";
 import { createSiteUrl } from "@/config/site";
 import type { ArticleDetail } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
@@ -18,11 +19,32 @@ interface PageProps {
 
 const articleService = new ArticleService();
 
+// Metadata and page rendering use the same request-scoped result, avoiding a
+// second Redis/Supabase read for the same article.
+const getArticle = cache(async (slug: string): Promise<ArticleDetail | null> => {
+    try {
+        return await articleService.getPublicArticleBySlug(slug);
+    } catch (error) {
+        if (error instanceof AuthException && error.status === 404) {
+            return null;
+        }
+
+        throw error;
+    }
+});
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { slug } = await params;
 
     try {
-        const article = await articleService.getPublicArticleMetaBySlug(slug);
+        const article = await getArticle(slug);
+
+        if (!article) {
+            return {
+                title: "BÃ i viáº¿t khÃ´ng tá»“n táº¡i Â· Nightlife.vn",
+            };
+        }
+
         const title = article.seo.meta_title ?? article.title;
         const description = article.seo.meta_description ?? article.excerpt ?? undefined;
         const canonical = article.seo.canonical_url ?? createSiteUrl(`/bai-viet/${article.slug}`).toString();
@@ -50,16 +72,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ArticleDetailPage({ params }: PageProps) {
     const { slug } = await params;
-    let article: ArticleDetail;
+    const article = await getArticle(slug);
 
-    try {
-        article = await serverFetch<ArticleDetail>(`/api/v1/bai-viet/${slug}`);
-    } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
-            notFound();
-        }
-
-        throw error;
+    if (!article) {
+        notFound();
     }
 
     return (
@@ -112,7 +128,12 @@ export default async function ArticleDetailPage({ params }: PageProps) {
                 </div>
             )}
 
-            <RelatedArticles category={article.category} excludeSlug={article.slug} />
+            {/* Streamed separately so the article body renders immediately instead
+                of waiting on the related-articles query, which genuinely depends
+                on this article's category and can't be fetched in parallel. */}
+            <Suspense fallback={<RelatedArticlesSkeleton />}>
+                <RelatedArticles category={article.category} excludeSlug={article.slug} />
+            </Suspense>
 
             {article.structured_data && (
                 <script
@@ -121,5 +142,18 @@ export default async function ArticleDetailPage({ params }: PageProps) {
                 />
             )}
         </article>
+    );
+}
+
+function RelatedArticlesSkeleton() {
+    return (
+        <div className="mt-12" aria-hidden="true">
+            <div className="mb-4 h-6 w-48 animate-pulse rounded bg-white/10" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {Array.from({ length: 3 }, (_, index) => (
+                    <div key={index} className="h-56 animate-pulse rounded-xl border border-border bg-void-2" />
+                ))}
+            </div>
+        </div>
     );
 }

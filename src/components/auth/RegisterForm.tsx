@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clientFetch } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/envelope";
+import { notifyAuthStateChanged } from "@/lib/auth/auth-events";
 import type { AuthResponse } from "@/lib/api/types";
 import { Button } from "@/components/ui/Button";
 import { FieldGroup, Input } from "@/components/ui/Field";
@@ -38,6 +39,7 @@ export function RegisterForm() {
                 return;
             }
 
+            notifyAuthStateChanged();
             router.push(next && next.startsWith("/") ? next : data.redirect_to);
             router.refresh();
         } catch (err) {

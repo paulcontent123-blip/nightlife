@@ -61,4 +61,23 @@ export interface EventRow {
     created_at: string;
 }
 
+// Public event lists do not need the full description, lineup or image gallery.
+// Keeping this row small reduces the Supabase response and the RSC payload.
+export interface EventListRow {
+    id: string;
+    slug: string;
+    venue_id: string;
+    title: string;
+    event_date: string;
+    start_time: string;
+    end_time: string | null;
+    genre: string[] | null;
+    thumbnail_url: string | null;
+    is_free: boolean;
+    age_restriction: number;
+    total_capacity: number | null;
+    is_active: boolean;
+    created_at: string;
+}
+
 export type EventRecord = Omit<EventRow, "id" | "created_at">;

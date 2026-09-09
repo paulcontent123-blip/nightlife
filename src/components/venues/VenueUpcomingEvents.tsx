@@ -1,19 +1,22 @@
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
-import type { Event, Paginated } from "@/lib/api/types";
+import { AuthException } from "@/modules/auth/auth.errors";
+import { EventListService } from "@/modules/events/event-list.service";
+import type { Event } from "@/lib/api/types";
 import { EventCard } from "@/components/events/EventCard";
 
-export async function VenueUpcomingEvents({ slug }: { slug: string }) {
+const eventListService = new EventListService();
+
+export async function VenueUpcomingEvents({ venueId }: { venueId: string }) {
     let events: Event[] = [];
 
     try {
-        const result = await serverFetch<Paginated<Event>>(
-            `/api/v1/venues/${slug}/events?is_active=true&limit=4`
+        const result = await eventListService.listPublicVenueEventsById(
+            venueId,
+            new URLSearchParams({ is_active: "true", limit: "4" })
         );
 
         events = result.items;
     } catch (error) {
-        if (!(error instanceof ApiError)) {
+        if (!(error instanceof AuthException)) {
             throw error;
         }
     }

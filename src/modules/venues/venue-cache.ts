@@ -1,6 +1,6 @@
 import { redisGetNumber, redisIncrement } from "@/lib/redis/server";
 
-const VENUE_LIST_CACHE_VERSION_KEY = "cache:venues:list:version";
+export const VENUE_LIST_CACHE_VERSION_KEY = "cache:venues:list:version";
 const VENUE_AVAILABILITY_CACHE_VERSION_KEY_PREFIX = "cache:venues:availability:version";
 
 export async function readVenueListCacheVersion() {

@@ -21,3 +21,12 @@ export async function createClient() {
         }
     );
 }
+
+// Avoid a network call to Supabase Auth when the request has no session cookie.
+export async function hasSupabaseAuthCookie() {
+    const cookieStore = await cookies();
+
+    return cookieStore.getAll().some(({ name }) => (
+        name.startsWith("sb-") && name.includes("-auth-token")
+    ));
+}

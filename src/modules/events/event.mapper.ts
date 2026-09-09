@@ -1,4 +1,4 @@
-import type { EventRow } from "./event.types";
+import type { EventListRow, EventRow } from "./event.types";
 
 export function mapEvent(row: EventRow) {
     return {
@@ -15,6 +15,30 @@ export function mapEvent(row: EventRow) {
         media: {
             thumbnail_url: row.thumbnail_url,
             images: row.images ?? [],
+        },
+        is_free: row.is_free,
+        age_restriction: row.age_restriction,
+        total_capacity: row.total_capacity,
+        is_active: row.is_active,
+        created_at: row.created_at,
+    };
+}
+
+export function mapEventList(row: EventListRow) {
+    return {
+        id: row.id,
+        slug: row.slug,
+        venue_id: row.venue_id,
+        title: row.title,
+        description: null,
+        event_date: row.event_date,
+        start_time: row.start_time,
+        end_time: row.end_time,
+        genre: row.genre ?? [],
+        lineup: [],
+        media: {
+            thumbnail_url: row.thumbnail_url,
+            images: [],
         },
         is_free: row.is_free,
         age_restriction: row.age_restriction,

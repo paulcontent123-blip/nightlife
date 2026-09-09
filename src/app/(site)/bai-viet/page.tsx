@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { serverFetch } from "@/lib/api/server";
-import { ApiError } from "@/lib/api/envelope";
+import { AuthException } from "@/modules/auth/auth.errors";
+import { ArticleListService } from "@/modules/articles/article-list.service";
 import type { ArticleListItem, Paginated } from "@/lib/api/types";
 import { ArticleCard } from "@/components/articles/ArticleCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -18,6 +18,7 @@ const EMPTY_RESULT: Paginated<ArticleListItem> = {
     items: [],
     pagination: { page: 1, limit: 12, total: 0, total_pages: 0 },
 };
+const articleListService = new ArticleListService();
 
 interface PageProps {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -42,9 +43,9 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
     let loadError = false;
 
     try {
-        result = await serverFetch<Paginated<ArticleListItem>>(`/api/v1/bai-viet?${query.toString()}`);
+        result = await articleListService.listPublicArticles(query);
     } catch (error) {
-        if (error instanceof ApiError) {
+        if (error instanceof AuthException) {
             loadError = true;
         } else {
             throw error;
@@ -141,8 +142,8 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
             ) : (
                 <>
                     <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {result.items.map((article) => (
-                            <ArticleCard key={article.id} article={article} />
+                        {result.items.map((article, index) => (
+                            <ArticleCard key={article.id} article={article} priority={index === 0} />
                         ))}
                     </div>
                     <Pagination pagination={result.pagination} buildHref={buildHref} />
