@@ -53,7 +53,12 @@ export class ForumRepository {
     }
 
     async listPublicPosts(query: ForumPostListQuery) {
-        let request = this.createPostListQuery(query, FORUM_POST_LIST_COLUMNS, "planned")
+        // Forum posts is a small enough table that an exact count is cheap,
+        // and correctness matters here: Postgres's "planned" estimate (based
+        // on table statistics) can be wildly stale after bulk seeding — in
+        // production this showed 18 pages for a table that actually had 1,
+        // with every page past the first silently returning zero posts.
+        let request = this.createPostListQuery(query, FORUM_POST_LIST_COLUMNS, "exact")
             .eq("is_approved", true);
 
         request = this.applyPostSort(request, query.sort);

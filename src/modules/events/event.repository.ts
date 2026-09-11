@@ -86,9 +86,13 @@ export class EventRepository {
     private async listPublicQuery(query: EventListQuery, venueId?: string) {
         const from = (query.page - 1) * query.limit;
         const to = from + query.limit - 1;
+        // "planned" uses Postgres's stale table-statistics estimate instead of a
+        // real COUNT(*); confirmed live in production to diverge wildly after
+        // bulk seeding (claimed 11 pages / 125 rows while only ~3 rows existed),
+        // silently returning empty results on every page past the first.
         let request = this.supabase
             .from(EVENTS_TABLE)
-            .select(EVENT_LIST_COLUMNS, { count: "planned" })
+            .select(EVENT_LIST_COLUMNS, { count: "exact" })
             .eq("is_active", true);
 
         if (venueId) {

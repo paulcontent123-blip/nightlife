@@ -83,9 +83,10 @@ export class VenueRepository {
         const shouldFilterOpenNow = query.is_open_now === true;
         let request = this.supabase
             .from(VENUES_TABLE)
-            // Planner count is enough for public pagination and avoids an exact
-            // count scan on every cache miss. Admin lists keep exact totals.
-            .select(VENUE_LIST_COLUMNS, { count: publicOnly ? "planned" : "exact" });
+            // "planned" count is a Postgres statistics estimate, not a real row
+            // count — confirmed to drift after bulk seeding (see forum/event/
+            // article repositories), so use "exact" for both branches.
+            .select(VENUE_LIST_COLUMNS, { count: "exact" });
 
         if (publicOnly) {
             request = request.eq("is_active", true);
