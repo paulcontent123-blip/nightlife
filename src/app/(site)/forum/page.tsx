@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ForumListService } from "@/modules/forums/forum-list.service";
 import { ForumPostCard } from "@/components/forum/ForumPostCard";
@@ -33,6 +34,11 @@ export default async function ForumPage({ searchParams }: PageProps) {
     if (venueId) query.set("venue_id", venueId);
 
     const result = await forumListService.listPublicPosts(query);
+
+    if (result.pagination.total_pages > 0 && result.pagination.page > result.pagination.total_pages) {
+        query.set("page", String(result.pagination.total_pages));
+        redirect(`/forum?${query.toString()}`);
+    }
 
     const persistedParams = { ...(city ? { city } : {}), ...(tag ? { tag } : {}), ...(venueId ? { venue_id: venueId } : {}) };
 

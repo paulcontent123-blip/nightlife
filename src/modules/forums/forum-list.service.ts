@@ -63,6 +63,6 @@ export class ForumListService {
     }
 
     private createCacheKey(query: Awaited<ReturnType<typeof ForumPostListQuerySchema.parse>>) {
-        return `cache:forum:posts:${JSON.stringify(query)}`;
+        return `cache:forum:posts:v2:${JSON.stringify(query)}`;
     }
 }

@@ -41,7 +41,7 @@ type PostListRequest = {
     range(from: number, to: number): PostListRequest & {
         returns<T>(): Promise<{
             data: T | null;
-            error: { message: string } | null;
+            error: { code?: string; message: string } | null;
             count: number | null;
         }>;
     };
@@ -63,7 +63,12 @@ export class ForumRepository {
 
         request = this.applyPostSort(request, query.sort);
 
-        return this.paginatePosts(request, query.page, query.limit);
+        return this.paginatePosts(
+            request,
+            query.page,
+            query.limit,
+            () => this.countPosts(query, true)
+        );
     }
 
     async listAdminPosts(query: AdminForumPostListQuery) {
@@ -79,7 +84,18 @@ export class ForumRepository {
 
         request = this.applyPostSort(request, query.sort);
 
-        return this.paginatePosts(request, query.page, query.limit);
+        const approvalStatus = query.status === "approved"
+            ? true
+            : query.status === "pending"
+                ? false
+                : undefined;
+
+        return this.paginatePosts(
+            request,
+            query.page,
+            query.limit,
+            () => this.countPosts(query, approvalStatus)
+        );
     }
 
     async findPublicPostById(postId: string) {
@@ -397,13 +413,28 @@ export class ForumRepository {
     private async paginatePosts(
         request: PostListRequest,
         page: number,
-        limit: number
+        limit: number,
+        countFallback: () => Promise<number>
     ) {
         const from = (page - 1) * limit;
         const to = from + limit - 1;
         const { data, error, count } = await request
             .range(from, to)
             .returns<ForumPostRow[]>();
+
+        if (error && isRangeNotSatisfiable(error)) {
+            const total = await countFallback();
+
+            return {
+                items: [],
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    total_pages: Math.ceil(total / limit),
+                },
+            };
+        }
 
         if (error) {
             throw new AuthException(500, "DATABASE_ERROR", error.message);
@@ -420,6 +451,39 @@ export class ForumRepository {
                 total_pages: Math.ceil(total / limit),
             },
         };
+    }
+
+    private async countPosts(
+        query: ForumPostListQuery,
+        isApproved?: boolean
+    ) {
+        let request = this.supabase
+            .from(FORUM_POSTS_TABLE)
+            .select("id", { count: "exact", head: true });
+
+        if (query.city) {
+            request = request.eq("city", query.city);
+        }
+
+        if (query.tag) {
+            request = request.contains("tags", [query.tag]);
+        }
+
+        if (query.venue_id) {
+            request = request.eq("venue_id", query.venue_id);
+        }
+
+        if (isApproved !== undefined) {
+            request = request.eq("is_approved", isApproved);
+        }
+
+        const { count, error } = await request;
+
+        if (error) {
+            throw new AuthException(500, "DATABASE_ERROR", error.message);
+        }
+
+        return count ?? 0;
     }
 
     private async incrementReplyCount(postId: string) {
@@ -455,4 +519,9 @@ export class ForumRepository {
             throw new AuthException(500, "DATABASE_ERROR", error.message);
         }
     }
+}
+
+function isRangeNotSatisfiable(error: { code?: string; message: string }) {
+    return error.code === "PGRST103"
+        || error.message.toLowerCase().includes("range not satisfiable");
 }
