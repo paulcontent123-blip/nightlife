@@ -15,6 +15,7 @@ const FOOTER_COLUMNS: Array<{ title: string; links: FooterLink[] }> = [
             { label: "Events & Concerts", href: "/events" },
             { label: "Happy Hour", href: "/happy-hour" },
             { label: "Bar Tour ĐNA", href: "/bar-tour" },
+            { label: "Điểm tin nightlife", href: "/bai-viet" },
             { label: "New Openings", href: "/venues?sort=newest" },
         ],
     },
@@ -23,7 +24,7 @@ const FOOTER_COLUMNS: Array<{ title: string; links: FooterLink[] }> = [
         links: [
             { label: "VIP Membership", href: "/membership" },
             { label: "Nightlife Passport", href: "/passport" },
-            { label: "Cộng đồng", href: "/forum" },
+            { label: "Giao lưu Clubber", href: "/forum" },
             { label: "Corporate Events", href: "/lien-he" },
         ],
     },

@@ -49,7 +49,7 @@ export default function HomePage() {
                                 🔍 Tìm địa điểm tối nay
                             </LinkButton>
                             <LinkButton href="/lien-he" variant="secondary" size="lg">
-                                Đặt bàn ngay →
+                                Tham gia ngay →
                             </LinkButton>
                         </div>
                         <div className="flex flex-wrap">

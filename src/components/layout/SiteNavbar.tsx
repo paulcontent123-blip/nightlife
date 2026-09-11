@@ -14,8 +14,13 @@ const NAV_LINKS = [
             { href: "/bar-tour", label: "Bar Tour" },
         ],
     },
-    { href: "/forum", label: "Cộng đồng" },
-    { href: "/bai-viet", label: "Bài viết" },
+    {
+        label: "Nhịp đập nightlife",
+        children: [
+            { href: "/bai-viet", label: "Điểm tin nightlife" },
+            { href: "/forum", label: "Giao lưu Clubber" },
+        ],
+    },
 ];
 
 export function SiteNavbar() {

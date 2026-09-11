@@ -97,7 +97,7 @@ export function SiteNavbarAuth() {
                 prefetch={false}
                 className="rounded-lg bg-amber px-4 py-1.5 font-display text-[13px] font-bold text-void shadow-[0_2px_16px_rgba(240,160,48,.35)] transition-all hover:-translate-y-0.5 hover:bg-amber-2 hover:shadow-[0_4px_24px_rgba(240,160,48,.5)]"
             >
-                Đặt bàn ngay
+                Tham gia ngay
             </Link>
         </div>
     );
