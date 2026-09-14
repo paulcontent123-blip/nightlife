@@ -1,15 +1,21 @@
+import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import "./globals.css";
 import { PushNotificationManager } from "@/components/notifications/PushNotificationManager";
+import { getGoogleAnalyticsId, getGoogleSiteVerification } from "@/config/google";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
+  const verificationToken = getGoogleSiteVerification();
 
   return {
     title: t("title"),
     description: t("description"),
+    ...(verificationToken
+      ? { verification: { google: verificationToken } }
+      : {}),
   };
 }
 
@@ -19,6 +25,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const [locale, messages] = await Promise.all([getLocale(), getMessages()]);
+  const googleAnalyticsId = getGoogleAnalyticsId();
 
   return (
     <html lang={locale === "zh" ? "zh-CN" : locale} suppressHydrationWarning>
@@ -42,6 +49,7 @@ export default async function RootLayout({
           {children}
           <PushNotificationManager />
         </NextIntlClientProvider>
+        {googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}
       </body>
     </html>
   );
