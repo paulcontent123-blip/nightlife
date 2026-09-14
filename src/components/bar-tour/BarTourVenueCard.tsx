@@ -2,10 +2,16 @@ import Link from "next/link";
 import type { BarTourVenueSuggestion } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
 import { VENUE_TYPE_EMOJI, VENUE_TYPE_LABEL } from "@/lib/format";
-import { getTranslations } from "next-intl/server";
 
-export async function BarTourVenueCard({ suggestion }: { suggestion: BarTourVenueSuggestion }) {
-    const t = await getTranslations("Common");
+export function BarTourVenueCard({
+    suggestion,
+    newLabel,
+    reviewsLabel,
+}: {
+    suggestion: BarTourVenueSuggestion;
+    newLabel: string;
+    reviewsLabel: string;
+}) {
     return (
         <Link
             href={`/venues/${suggestion.slug}`}
@@ -15,10 +21,10 @@ export async function BarTourVenueCard({ suggestion }: { suggestion: BarTourVenu
             <div className="mb-2 flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <p className="break-words font-display text-base font-bold text-white">
-                        {VENUE_TYPE_EMOJI[suggestion.type] ?? "🥃"} {suggestion.name}
+                        {VENUE_TYPE_EMOJI[suggestion.type] ?? String.fromCodePoint(0x1F943)} {suggestion.name}
                     </p>
                     <p className="mt-0.5 text-xs text-muted">
-                        📍 {[suggestion.district, suggestion.city.toUpperCase()].filter(Boolean).join(" · ")} ·{" "}
+                        &#x1F4CD; {[suggestion.district, suggestion.city.toUpperCase()].filter(Boolean).join(" · ")} ·{" "}
                         {VENUE_TYPE_LABEL[suggestion.type] ?? suggestion.type}
                     </p>
                 </div>
@@ -28,8 +34,8 @@ export async function BarTourVenueCard({ suggestion }: { suggestion: BarTourVenu
             <p className="mb-2.5 text-xs leading-relaxed text-muted">{suggestion.reason}</p>
 
             <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-amber">⭐ {suggestion.rating ? suggestion.rating.toFixed(1) : t("new")}</span>
-                <span className="text-muted">· {suggestion.total_reviews} {t("reviews")}</span>
+                <span className="text-amber">&#x2B50; {suggestion.rating ? suggestion.rating.toFixed(1) : newLabel}</span>
+                <span className="text-muted">· {suggestion.total_reviews} {reviewsLabel}</span>
                 <span className="text-white">{suggestion.price_range}</span>
             </div>
 
@@ -37,12 +43,12 @@ export async function BarTourVenueCard({ suggestion }: { suggestion: BarTourVenu
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
                     {suggestion.deals.map((deal) => (
                         <span key={deal.id} className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
-                            🏷️ {deal.title}
+                            &#x1F3F7;&#xFE0F; {deal.title}
                         </span>
                     ))}
                     {suggestion.events.map((event) => (
                         <span key={event.id} className="rounded-md bg-cyan-wash px-2 py-0.5 text-[10px] font-semibold text-cyan">
-                            🎫 {event.title}
+                            &#x1F39F;&#xFE0F; {event.title}
                         </span>
                     ))}
                 </div>
