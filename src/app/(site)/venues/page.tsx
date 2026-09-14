@@ -1,11 +1,15 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { VenueFilterBar } from "@/components/venues/VenueFilterBar";
 import { VenueResults } from "@/components/venues/VenueResults";
 import { VenueResultsSkeleton } from "@/components/venues/VenueResultsSkeleton";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
-export const metadata: Metadata = { title: "Địa điểm · Nightlife.vn" };
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("Venues");
+    return { title: t("metaTitle") };
+}
 
 const FILTER_KEYS = ["city", "type", "district", "price_range", "sort"] as const;
 interface VenuesPageProps {
@@ -13,6 +17,7 @@ interface VenuesPageProps {
 }
 
 export default async function VenuesPage({ searchParams }: VenuesPageProps) {
+    const t = await getTranslations("Venues");
     const params = await searchParams;
     const query = new URLSearchParams();
 
@@ -29,14 +34,14 @@ export default async function VenuesPage({ searchParams }: VenuesPageProps) {
     query.set("limit", "12");
 
     return (
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-10">
+        <div className="mx-auto min-w-0 max-w-6xl px-5 py-12 sm:px-10 sm:py-16">
             <SectionHeading
-                tag="Khám phá địa điểm"
+                tag={t("eyebrow")}
                 title={
                     <>
-                        Venues đã xác minh
+                        {t("title")}
                         <br />
-                        <em className="not-italic text-amber">— tìm đúng nơi, đúng mood</em>
+                        <em className="not-italic text-amber">{t("subtitle")}</em>
                     </>
                 }
             />

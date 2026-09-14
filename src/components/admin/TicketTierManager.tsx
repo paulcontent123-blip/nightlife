@@ -105,7 +105,7 @@ export function TicketTierManager({ eventId, initialTiers }: { eventId: string; 
                     <FieldGroup label="Tên loại vé">
                         <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Early Bird" />
                     </FieldGroup>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <FieldGroup label="Giá (VND)">
                             <Input type="number" min={0} required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
                         </FieldGroup>

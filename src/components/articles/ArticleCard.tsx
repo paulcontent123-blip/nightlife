@@ -4,12 +4,14 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { ARTICLE_CATEGORY_LABEL } from "@/lib/format";
 import { getOptimizedCloudinaryImageUrl } from "@/lib/cloudinary/image-url";
+import { getTranslations } from "next-intl/server";
 
-export function ArticleCard({ article, priority = false }: { article: ArticleListItem; priority?: boolean }) {
+export async function ArticleCard({ article, priority = false }: { article: ArticleListItem; priority?: boolean }) {
+    const t = await getTranslations("Articles");
     const imageUrl = getOptimizedCloudinaryImageUrl(article.seo.og_image_url);
 
     return (
-        <Link href={`/bai-viet/${article.slug}`} prefetch={false} className="group block h-full">
+        <Link href={`/bai-viet/${article.slug}`} prefetch={false} className="group block h-full min-w-0">
             <Card className="flex h-full flex-col overflow-hidden transition-colors group-hover:border-amber-border group-hover:bg-void-3">
                 {imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -36,7 +38,7 @@ export function ArticleCard({ article, priority = false }: { article: ArticleLis
                         {article.city && <Badge tone="cyan">{article.city}</Badge>}
                     </div>
                     <div>
-                        <h2 className="font-display text-lg font-extrabold leading-snug text-white group-hover:text-amber">
+                        <h2 className="break-words font-display text-lg font-extrabold leading-snug text-white group-hover:text-amber">
                             {article.title}
                         </h2>
                         {article.excerpt && (
@@ -46,8 +48,8 @@ export function ArticleCard({ article, priority = false }: { article: ArticleLis
                         )}
                     </div>
                     <div className="mt-auto flex flex-wrap items-center gap-3 text-xs text-muted-2">
-                        <span>{article.reading_time_minutes} phút đọc</span>
-                        <span>{article.view_count} lượt xem</span>
+                        <span>{article.reading_time_minutes} {t("minutesRead")}</span>
+                        <span>{article.view_count} {t("views")}</span>
                     </div>
                 </div>
             </Card>

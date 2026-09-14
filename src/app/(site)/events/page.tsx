@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { AuthException } from "@/modules/auth/auth.errors";
 import { EventListService } from "@/modules/events/event-list.service";
 import type { Event, Paginated } from "@/lib/api/types";
@@ -8,7 +9,10 @@ import { Pagination } from "@/components/ui/Pagination";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-export const metadata: Metadata = { title: "Sự kiện · Nightlife.vn" };
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("Events");
+    return { title: t("metaTitle") };
+}
 
 const EMPTY_RESULT: Paginated<Event> = { items: [], pagination: { page: 1, limit: 12, total: 0, total_pages: 0 } };
 const eventListService = new EventListService();
@@ -18,6 +22,10 @@ interface PageProps {
 }
 
 export default async function EventsPage({ searchParams }: PageProps) {
+    const [eventsT, commonT] = await Promise.all([
+        getTranslations("Events"),
+        getTranslations("Common"),
+    ]);
     const params = await searchParams;
     const genre = typeof params.genre === "string" ? params.genre : undefined;
     const dateFrom = typeof params.date_from === "string" ? params.date_from : undefined;
@@ -49,49 +57,50 @@ export default async function EventsPage({ searchParams }: PageProps) {
     }
 
     return (
-        <div className="mx-auto max-w-5xl px-5 py-16 sm:px-10">
+        <div className="mx-auto min-w-0 max-w-5xl px-5 py-12 sm:px-10 sm:py-16">
             <SectionHeading
-                tag="Sự kiện & Concerts"
+                tag={eventsT("eyebrow")}
                 title={
                     <>
-                        Đừng bỏ lỡ
+                        {eventsT("title")}
                         <br />
-                        <em className="not-italic text-amber">— events sắp diễn ra</em>
+                        <em className="not-italic text-amber">{eventsT("subtitle")}</em>
                     </>
                 }
             />
 
-            <form method="get" className="mt-6 flex flex-wrap items-center gap-2">
+            <form method="get" className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-[auto_minmax(180px,1fr)_auto_auto] sm:items-center">
                 <input
                     type="date"
                     name="date_from"
                     defaultValue={dateFrom}
-                    className="h-9 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-2.5 text-xs text-white outline-none focus:border-amber"
+                    aria-label={commonT("filter")}
+                    className="h-9 w-full min-w-0 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-2.5 text-xs text-white outline-none focus:border-amber"
                 />
                 <input
                     type="text"
                     name="genre"
                     defaultValue={genre}
-                    placeholder="Thể loại (vd: edm, jazz)"
-                    className="h-9 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-2.5 text-xs text-white outline-none placeholder:text-muted-2 focus:border-amber"
+                    placeholder={eventsT("genrePlaceholder")}
+                    className="h-9 w-full min-w-0 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-2.5 text-xs text-white outline-none placeholder:text-muted-2 focus:border-amber"
                 />
                 <button type="submit" className="h-9 rounded-lg border-[1.5px] border-border-strong px-3 text-xs font-semibold text-muted hover:border-amber-border hover:text-amber">
-                    Lọc
+                    {commonT("filter")}
                 </button>
                 {(genre || dateFrom) && (
                     <Link href="/events" className="text-xs text-muted hover:text-white">
-                        Xoá bộ lọc
+                        {commonT("clearFilters")}
                     </Link>
                 )}
             </form>
 
             {loadError ? (
                 <div className="mt-10">
-                    <EmptyState icon="⚠️" title="Không tải được danh sách sự kiện" description="Vui lòng thử lại sau." />
+                    <EmptyState icon="⚠️" title={eventsT("loadError")} description={commonT("tryAgain")} />
                 </div>
             ) : result.items.length === 0 ? (
                 <div className="mt-10">
-                    <EmptyState title="Chưa có sự kiện nào" description="Quay lại sau để không bỏ lỡ events hot." />
+                    <EmptyState title={eventsT("empty")} description={eventsT("emptyDescription")} />
                 </div>
             ) : (
                 <>

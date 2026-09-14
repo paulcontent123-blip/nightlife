@@ -3,15 +3,20 @@ import type { VenueListItem } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
 import { formatVnd, VENUE_TYPE_EMOJI, VENUE_TYPE_LABEL } from "@/lib/format";
 import { getOptimizedCloudinaryImageUrl } from "@/lib/cloudinary/image-url";
+import { getTranslations } from "next-intl/server";
 
-export function VenueCard({ venue, priority = false }: { venue: VenueListItem; priority?: boolean }) {
+export async function VenueCard({ venue, priority = false }: { venue: VenueListItem; priority?: boolean }) {
+    const [venuesT, commonT] = await Promise.all([
+        getTranslations("Venues"),
+        getTranslations("Common"),
+    ]);
     const thumbnailUrl = getOptimizedCloudinaryImageUrl(venue.media.thumbnail_url);
 
     return (
         <Link
             href={`/venues/${venue.slug}`}
             prefetch={false}
-            className="group block overflow-hidden rounded-xl border border-border bg-void-2 shadow-[0_4px_28px_rgba(0,0,0,.5)] transition-all hover:-translate-y-1 hover:border-amber-border hover:bg-void-3 hover:shadow-[0_12px_52px_rgba(0,0,0,.6)]"
+            className="group block min-w-0 overflow-hidden rounded-xl border border-border bg-void-2 shadow-[0_4px_28px_rgba(0,0,0,.5)] transition-all hover:-translate-y-1 hover:border-amber-border hover:bg-void-3 hover:shadow-[0_12px_52px_rgba(0,0,0,.6)]"
         >
             <div className="relative flex h-40 items-center justify-center overflow-hidden bg-gradient-to-br from-void-3 to-void-4 text-5xl">
                 {thumbnailUrl ? (
@@ -35,7 +40,7 @@ export function VenueCard({ venue, priority = false }: { venue: VenueListItem; p
                 </Badge>
                 {venue.status.is_verified && (
                     <Badge tone="green" className="absolute right-3 top-3">
-                        ✓ Đã xác minh
+                        ✓ {venuesT("verified")}
                     </Badge>
                 )}
             </div>
@@ -56,12 +61,12 @@ export function VenueCard({ venue, priority = false }: { venue: VenueListItem; p
                     </div>
                 )}
                 <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-[13px] text-amber">
-                        ⭐ {venue.metrics.avg_rating ? venue.metrics.avg_rating.toFixed(1) : "Mới"}
-                        <span className="text-[11px] text-muted">· {venue.metrics.total_reviews} đánh giá</span>
+                    <span className="flex min-w-0 items-center gap-1 text-[13px] text-amber">
+                        ⭐ {venue.metrics.avg_rating ? venue.metrics.avg_rating.toFixed(1) : commonT("new")}
+                        <span className="truncate text-[11px] text-muted">· {venue.metrics.total_reviews} {commonT("reviews")}</span>
                     </span>
                     <span className="font-display text-sm font-bold text-white">
-                        {venue.pricing.cover_charge > 0 ? formatVnd(venue.pricing.cover_charge) : "Free entry"}
+                        {venue.pricing.cover_charge > 0 ? formatVnd(venue.pricing.cover_charge) : venuesT("freeEntry")}
                     </span>
                 </div>
             </div>

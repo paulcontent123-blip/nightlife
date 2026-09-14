@@ -1,100 +1,92 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
-const SOCIAL_ICONS = ["f", "📷", "▶", "𝕏", "💬"];
+const SOCIAL_ICONS = ["f", "◎", "▶", "𝕏", "◌"];
 
 interface FooterLink {
     label: string;
     href: string;
 }
 
-const FOOTER_COLUMNS: Array<{ title: string; links: FooterLink[] }> = [
-    {
-        title: "Khám phá",
-        links: [
-            { label: "Tìm địa điểm", href: "/venues" },
-            { label: "Events & Concerts", href: "/events" },
-            { label: "Happy Hour", href: "/happy-hour" },
-            { label: "Bar Tour ĐNA", href: "/bar-tour" },
-            { label: "Điểm tin nightlife", href: "/bai-viet" },
-            { label: "New Openings", href: "/venues?sort=newest" },
-        ],
-    },
-    {
-        title: "Tính năng",
-        links: [
-            { label: "VIP Membership", href: "/membership" },
-            { label: "Nightlife Passport", href: "/passport" },
-            { label: "Giao lưu Clubber", href: "/forum" },
-            { label: "Corporate Events", href: "/lien-he" },
-        ],
-    },
-    {
-        title: "Thành phố",
-        links: [
-            { label: "TP. Hồ Chí Minh", href: "/venues?city=hcm" },
-            { label: "Hà Nội", href: "/venues?city=hanoi" },
-            { label: "Đà Nẵng", href: "/venues?city=danang" },
-        ],
-    },
-    {
-        title: "Đối tác",
-        links: [
-            { label: "Đưa venue lên Nightlife", href: "/lien-he" },
-            { label: "Quảng cáo & Hợp tác", href: "/lien-he" },
-            { label: "BookingModel (DJ/Talent)", href: "#" },
-            { label: "VEA Retail (vé)", href: "#" },
-        ],
-    },
-    {
-        title: "Hỗ trợ",
-        links: [
-            { label: "Hotline 24/7", href: "#" },
-            { label: "FAQ", href: "#" },
-            { label: "Chính sách đặt bàn", href: "#" },
-            { label: "Bảo mật", href: "#" },
-            { label: "Điều khoản", href: "#" },
-        ],
-    },
-];
-
 function FooterLinkItem({ href, label }: FooterLink) {
-    const className = "text-[12.5px] text-muted transition-colors hover:text-white";
+    const className = "break-words text-[12.5px] text-muted transition-colors hover:text-white";
 
     if (href === "#") {
-        return (
-            <a href="#" className={className}>
-                {label}
-            </a>
-        );
+        return <a href="#" className={className}>{label}</a>;
     }
 
-    return (
-        <Link href={href} prefetch={false} className={className}>
-            {label}
-        </Link>
-    );
+    return <Link href={href} prefetch={false} className={className}>{label}</Link>;
 }
 
-export function SiteFooter() {
-    return (
-        <footer className="border-t border-border bg-void px-5 py-14 sm:px-10 sm:py-16">
-            <div>
-                <div className="mb-11 h-[2px] w-full bg-gradient-to-r from-amber via-pink to-cyan" />
+export async function SiteFooter() {
+    const t = await getTranslations("Footer");
+    const columns: Array<{ title: string; links: FooterLink[] }> = [
+        {
+            title: t("explore"),
+            links: [
+                { label: t("findVenues"), href: "/venues" },
+                { label: t("events"), href: "/events" },
+                { label: "Happy Hour", href: "/happy-hour" },
+                { label: "Bar Tour", href: "/bar-tour" },
+                { label: t("news"), href: "/bai-viet" },
+                { label: t("newOpenings"), href: "/venues?sort=newest" },
+            ],
+        },
+        {
+            title: t("features"),
+            links: [
+                { label: t("membership"), href: "/membership" },
+                { label: t("passport"), href: "/passport" },
+                { label: t("community"), href: "/forum" },
+                { label: t("corporate"), href: "/lien-he" },
+            ],
+        },
+        {
+            title: t("cities"),
+            links: [
+                { label: "TP. Hồ Chí Minh", href: "/venues?city=hcm" },
+                { label: "Hà Nội", href: "/venues?city=hanoi" },
+                { label: "Đà Nẵng", href: "/venues?city=danang" },
+            ],
+        },
+        {
+            title: t("partners"),
+            links: [
+                { label: t("addVenue"), href: "/lien-he" },
+                { label: t("advertising"), href: "/lien-he" },
+                { label: "BookingModel (DJ/Talent)", href: "#" },
+                { label: "VEA Retail", href: "#" },
+            ],
+        },
+        {
+            title: t("support"),
+            links: [
+                { label: t("hotline"), href: "#" },
+                { label: t("faq"), href: "#" },
+                { label: t("bookingPolicy"), href: "#" },
+                { label: t("privacy"), href: "#" },
+                { label: t("terms"), href: "#" },
+            ],
+        },
+    ];
 
-                <div className="mb-11 grid grid-cols-1 gap-10 lg:grid-cols-[280px_1fr]">
-                    <div>
+    return (
+        <footer className="border-t border-border bg-void px-5 py-12 sm:px-10 sm:py-16">
+            <div className="mx-auto w-full max-w-[1600px] min-w-0">
+                <div className="mb-10 h-[2px] w-full bg-gradient-to-r from-amber via-pink to-cyan" />
+
+                <div className="mb-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
+                    <div className="min-w-0">
                         <p className="mb-2.5 font-display text-[22px] font-extrabold">
                             <span className="text-amber">Night</span>life.vn
                         </p>
-                        <p className="mb-4 text-[13px] leading-relaxed text-muted">
-                            Vietnam&apos;s #1 Nightlife Platform — Khám phá 2.800+ bars, clubs và venues đã xác minh tại Việt Nam
-                            và Đông Nam Á. Thành viên VEA Group.
-                        </p>
-                        <div className="flex gap-2">
+                        <p className="mb-4 text-[13px] leading-relaxed text-muted">{t("description")}</p>
+                        <div className="flex flex-wrap gap-2">
                             {SOCIAL_ICONS.map((icon, index) => (
                                 <a
                                     key={index}
                                     href="#"
+                                    aria-label={`Social link ${index + 1}`}
                                     className="flex h-[34px] w-[34px] items-center justify-center rounded-lg border border-border-strong text-sm text-muted transition-colors hover:border-amber-border hover:bg-amber-wash hover:text-amber"
                                 >
                                     {icon}
@@ -103,15 +95,15 @@ export function SiteFooter() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
-                        {FOOTER_COLUMNS.map((column) => (
-                            <div key={column.title}>
-                                <p className="mb-3.5 font-display text-[11px] font-bold uppercase tracking-wide text-muted-2">
+                    <div className="grid min-w-0 grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
+                        {columns.map((column) => (
+                            <div key={column.title} className="min-w-0">
+                                <p className="mb-3.5 break-words font-display text-[11px] font-bold uppercase text-muted-2">
                                     {column.title}
                                 </p>
                                 <ul className="flex flex-col gap-2">
                                     {column.links.map((link) => (
-                                        <li key={link.label}>
+                                        <li key={`${link.href}-${link.label}`} className="min-w-0">
                                             <FooterLinkItem {...link} />
                                         </li>
                                     ))}
@@ -123,24 +115,13 @@ export function SiteFooter() {
 
                 <div className="mb-5 h-px bg-border" />
 
-                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-2">
-                    <p>
-                        © 2026 Nightlife.com.vn · Thành viên <span className="text-amber">VEA Group</span> · Vietnam Era Group
-                        🇻🇳
-                    </p>
-                    <div className="flex gap-4">
-                        <a href="#" className="transition-colors hover:text-white">
-                            Bảo mật
-                        </a>
-                        <a href="#" className="transition-colors hover:text-white">
-                            Điều khoản
-                        </a>
-                        <a href="#" className="transition-colors hover:text-white">
-                            Cookie
-                        </a>
-                        <a href="#" className="transition-colors hover:text-white">
-                            Sitemap
-                        </a>
+                <div className="flex flex-col gap-4 text-xs text-muted-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p>© 2026 Nightlife.vn · <span className="text-amber">VEA Group</span></p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-2">
+                        <a href="#" className="transition-colors hover:text-white">{t("privacy")}</a>
+                        <a href="#" className="transition-colors hover:text-white">{t("terms")}</a>
+                        <a href="#" className="transition-colors hover:text-white">{t("cookie")}</a>
+                        <a href="#" className="transition-colors hover:text-white">{t("sitemap")}</a>
                     </div>
                 </div>
             </div>

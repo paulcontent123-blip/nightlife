@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const LINKS = [
+export const ADMIN_LINKS = [
     { href: "/admin/dashboard", label: "Dashboard", icon: "📊" },
     { href: "/admin/venues", label: "Venues", icon: "🏙️" },
     { href: "/admin/bookings", label: "Đặt bàn", icon: "🪑" },
@@ -25,7 +25,7 @@ export function AdminSidebar() {
                 </span>
             </Link>
             <nav className="flex flex-col gap-1">
-                {LINKS.map((link) => (
+                {ADMIN_LINKS.map((link) => (
                     <Link
                         key={link.href}
                         href={link.href}

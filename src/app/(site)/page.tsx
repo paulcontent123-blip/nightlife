@@ -1,14 +1,16 @@
+import { getTranslations } from "next-intl/server";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { HeroHotTonightPanel } from "@/components/home/HeroHotTonightPanel";
 
-const HERO_STATS = [
-    { value: "2.800+", label: "Venues xác minh" },
-    { value: "48K+", label: "Đặt bàn/tháng" },
-    { value: "120+", label: "Events/tháng" },
-    { value: "8 TP", label: "Thành phố" },
-];
+export default async function HomePage() {
+    const t = await getTranslations("Home");
+    const stats = [
+        { value: "2.800+", label: t("verifiedVenues") },
+        { value: "48K+", label: t("monthlyBookings") },
+        { value: "120+", label: t("monthlyEvents") },
+        { value: "8", label: t("cities") },
+    ];
 
-export default function HomePage() {
     return (
         <section className="relative overflow-hidden">
             <div
@@ -19,47 +21,37 @@ export default function HomePage() {
                     backgroundSize: "56px 56px",
                 }}
             />
-            <div
-                className="pointer-events-none absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full opacity-70"
-                style={{ background: "radial-gradient(circle, rgba(240,160,48,.14) 0%, transparent 65%)" }}
-            />
-            <div
-                className="pointer-events-none absolute -right-20 bottom-0 h-[380px] w-[380px] rounded-full opacity-70"
-                style={{ background: "radial-gradient(circle, rgba(224,64,106,.09) 0%, transparent 65%)" }}
-            />
-
-            <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_420px]">
-                <div className="px-5 py-20 sm:px-10 sm:py-28">
-                    <div className="max-w-3xl">
+            <div className="relative grid min-w-0 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px]">
+                <div className="min-w-0 px-5 py-16 sm:px-10 sm:py-24 lg:py-28">
+                    <div className="min-w-0 max-w-3xl">
                         <p className="mb-5 flex items-center gap-2 font-display text-[11px] font-bold uppercase tracking-[2px] text-amber">
                             <span className="h-px w-5 bg-amber" />
-                            Vietnam&apos;s #1 Nightlife Platform
+                            {t("eyebrow")}
                         </p>
-                        <h1 className="mb-4 font-display text-5xl font-extrabold leading-[1] tracking-tight sm:text-6xl">
-                            Đêm nay <span className="bg-gradient-to-br from-amber via-amber-2 to-amber-3 bg-clip-text text-transparent">đi đâu?</span>
+                        <h1 className="mb-4 break-words font-display text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl">
+                            {t("titleStart")} <span className="bg-gradient-to-br from-amber via-amber-2 to-amber-3 bg-clip-text text-transparent">{t("titleAccent")}</span>
                             <br />
-                            <span className="font-normal text-muted">— Chúng tôi biết.</span>
+                            <span className="font-normal text-muted">{t("titleAnswer")}</span>
                         </h1>
                         <p className="mb-8 max-w-lg text-base leading-relaxed text-muted">
-                            Khám phá hàng trăm bar, club và rooftop đã xác minh · Đặt bàn tức thì · Xem Happy Hour deals
-                            mỗi ngày · Đừng bỏ lỡ events hot nhất tối nay.
+                            {t("description")}
                         </p>
-                        <div className="mb-10 flex flex-wrap gap-2.5">
-                            <LinkButton href="/venues" size="lg">
-                                🔍 Tìm địa điểm tối nay
+                        <div className="mb-10 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+                            <LinkButton href="/venues" size="lg" className="w-full sm:w-auto">
+                                {t("findVenue")}
                             </LinkButton>
-                            <LinkButton href="/lien-he" variant="secondary" size="lg">
-                                Tham gia ngay →
+                            <LinkButton href="/lien-he" variant="secondary" size="lg" className="w-full sm:w-auto">
+                                {t("joinNow")}
                             </LinkButton>
                         </div>
-                        <div className="flex flex-wrap">
-                            {HERO_STATS.map((stat, index) => (
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4">
+                            {stats.map((stat) => (
                                 <div
                                     key={stat.label}
-                                    className={["px-7 first:pl-0", index < HERO_STATS.length - 1 ? "border-r border-border" : ""].join(" ")}
+                                    className="min-w-0 border-l border-border pl-3 first:border-l-0 first:pl-0 sm:first:border-l"
                                 >
-                                    <p className="font-display text-3xl font-extrabold leading-none text-amber">{stat.value}</p>
-                                    <p className="mt-1 text-xs text-muted">{stat.label}</p>
+                                    <p className="font-display text-2xl font-extrabold leading-none text-amber sm:text-3xl">{stat.value}</p>
+                                    <p className="mt-1 break-words text-xs text-muted">{stat.label}</p>
                                 </div>
                             ))}
                         </div>

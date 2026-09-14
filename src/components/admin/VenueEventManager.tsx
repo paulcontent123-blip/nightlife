@@ -88,7 +88,7 @@ export function VenueEventManager({ venueId, initialEvents }: { venueId: string;
                     <FieldGroup label="Tên sự kiện">
                         <Input required value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
                     </FieldGroup>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <FieldGroup label="Ngày">
                             <Input type="date" required value={form.event_date} onChange={(event) => setForm({ ...form, event_date: event.target.value })} />
                         </FieldGroup>

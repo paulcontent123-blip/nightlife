@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { AuthException } from "@/modules/auth/auth.errors";
 import { ArticleListService } from "@/modules/articles/article-list.service";
 import type { ArticleListItem, Paginated } from "@/lib/api/types";
@@ -9,10 +10,10 @@ import { Pagination } from "@/components/ui/Pagination";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ARTICLE_CATEGORY_LABEL } from "@/lib/format";
 
-export const metadata: Metadata = {
-    title: "Bài viết nightlife, bar, club và happy hour · Nightlife.vn",
-    description: "Tin tức và hướng dẫn về nightlife, bar, club, happy hour và event tại Việt Nam.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("Articles");
+    return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 const EMPTY_RESULT: Paginated<ArticleListItem> = {
     items: [],
@@ -25,6 +26,10 @@ interface PageProps {
 }
 
 export default async function ArticlesPage({ searchParams }: PageProps) {
+    const [articlesT, commonT] = await Promise.all([
+        getTranslations("Articles"),
+        getTranslations("Common"),
+    ]);
     const params = await searchParams;
     const page = typeof params.page === "string" ? params.page : "1";
     const q = typeof params.q === "string" ? params.q : undefined;
@@ -62,17 +67,17 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
     const hasActiveFilters = Boolean(q || city || category || tag);
 
     return (
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-10">
+        <div className="mx-auto min-w-0 max-w-6xl px-5 py-12 sm:px-10 sm:py-16">
             <SectionHeading
-                tag="Nightlife guide"
+                tag={articlesT("eyebrow")}
                 title={
                     <>
-                        Bài viết
+                        {articlesT("title")}
                         <br />
-                        <em className="not-italic text-amber">cho bar, club, event và happy hour</em>
+                        <em className="not-italic text-amber">{articlesT("subtitle")}</em>
                     </>
                 }
-                description="Tin tức, cẩm nang và gợi ý được đội ngũ Nightlife.vn cập nhật để bạn biết đêm nay đi đâu."
+                description={articlesT("description")}
             />
 
             <form method="get" className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_140px_160px_140px_auto]">
@@ -80,14 +85,14 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
                     type="search"
                     name="q"
                     defaultValue={q}
-                    placeholder="Tìm từ khoá: bar Q1 hcm, club sài gòn..."
+                    placeholder={articlesT("searchPlaceholder")}
                     className="h-10 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-3 text-sm text-white outline-none placeholder:text-muted-2 focus:border-amber"
                 />
                 <input
                     type="text"
                     name="city"
                     defaultValue={city}
-                    placeholder="Thành phố"
+                    placeholder={commonT("city")}
                     className="h-10 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-3 text-sm text-white outline-none placeholder:text-muted-2 focus:border-amber"
                 />
                 <select
@@ -95,7 +100,7 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
                     defaultValue={category ?? ""}
                     className="h-10 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-3 text-sm text-white outline-none focus:border-amber"
                 >
-                    <option value="">Tất cả loại bài</option>
+                    <option value="">{articlesT("allCategories")}</option>
                     {Object.entries(ARTICLE_CATEGORY_LABEL).map(([value, label]) => (
                         <option key={value} value={value}>
                             {label}
@@ -106,17 +111,17 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
                     type="text"
                     name="tag"
                     defaultValue={tag}
-                    placeholder="Tag"
+                    placeholder={articlesT("tagPlaceholder")}
                     className="h-10 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-3 text-sm text-white outline-none placeholder:text-muted-2 focus:border-amber"
                 />
                 <button type="submit" className="h-10 rounded-lg border-[1.5px] border-border-strong px-4 text-sm font-semibold text-muted hover:border-amber-border hover:text-amber">
-                    Lọc
+                    {commonT("filter")}
                 </button>
             </form>
 
             {hasActiveFilters && (
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                    <span className="text-muted">Đang lọc theo:</span>
+                    <span className="text-muted">{articlesT("filteringBy")}</span>
                     {q && <span className="rounded-md bg-white/5 px-2 py-1 font-semibold text-muted">“{q}”</span>}
                     {city && <span className="rounded-md bg-white/5 px-2 py-1 font-semibold text-muted">{city}</span>}
                     {category && (
@@ -126,18 +131,18 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
                     )}
                     {tag && <span className="rounded-md bg-white/5 px-2 py-1 font-semibold text-muted">#{tag}</span>}
                     <Link href="/bai-viet" className="font-semibold text-amber hover:underline">
-                        ✕ Xoá bộ lọc
+                        ✕ {commonT("clearFilters")}
                     </Link>
                 </div>
             )}
 
             {loadError ? (
                 <div className="mt-10">
-                    <EmptyState title="Không tải được bài viết" description="Vui lòng thử lại sau." />
+                    <EmptyState title={articlesT("loadError")} description={commonT("tryAgain")} />
                 </div>
             ) : result.items.length === 0 ? (
                 <div className="mt-10">
-                    <EmptyState title="Chưa có bài viết phù hợp" description="Đội ngũ Nightlife.vn sẽ cập nhật bài viết mới sớm." />
+                    <EmptyState title={articlesT("empty")} description={articlesT("emptyDescription")} />
                 </div>
             ) : (
                 <>

@@ -4,10 +4,15 @@ import type { Paginated, VenueListItem } from "@/lib/api/types";
 import { VenueCard } from "@/components/venues/VenueCard";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { getTranslations } from "next-intl/server";
 
 const venueListService = new VenueListService();
 
 export async function VenueResults({ queryString }: { queryString: string }) {
+    const [venuesT, commonT] = await Promise.all([
+        getTranslations("Venues"),
+        getTranslations("Common"),
+    ]);
     const query = new URLSearchParams(queryString);
     let result: Paginated<VenueListItem>;
 
@@ -17,7 +22,7 @@ export async function VenueResults({ queryString }: { queryString: string }) {
         if (error instanceof AuthException) {
             return (
                 <div className="mt-10">
-                    <EmptyState icon="⚠️" title="Không tải được danh sách venue" description="Vui lòng thử lại sau." />
+                    <EmptyState icon="⚠️" title={venuesT("loadError")} description={commonT("tryAgain")} />
                 </div>
             );
         }
@@ -28,7 +33,7 @@ export async function VenueResults({ queryString }: { queryString: string }) {
     if (result.items.length === 0) {
         return (
             <div className="mt-10">
-                <EmptyState title="Không tìm thấy venue phù hợp" description="Thử điều chỉnh bộ lọc để xem thêm lựa chọn." />
+                <EmptyState title={venuesT("empty")} description={venuesT("emptyDescription")} />
             </div>
         );
     }

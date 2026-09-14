@@ -44,8 +44,8 @@ export default async function ForumPostPage({ params }: PageProps) {
     }
 
     return (
-        <div className="mx-auto max-w-3xl px-5 py-16 sm:px-10">
-            <div className="rounded-xl border border-border bg-void-2 p-6">
+        <div className="mx-auto min-w-0 max-w-3xl px-5 py-12 sm:px-10 sm:py-16">
+            <div className="min-w-0 rounded-xl border border-border bg-void-2 p-4 sm:p-6">
                 <div className="mb-3 flex flex-wrap items-center gap-1.5">
                     {post.is_pinned && <Badge tone="amber">📌 Ghim</Badge>}
                     {post.city && <Badge tone="cyan">{CITY_LABEL[post.city] ?? post.city}</Badge>}
@@ -55,8 +55,8 @@ export default async function ForumPostPage({ params }: PageProps) {
                         </span>
                     ))}
                 </div>
-                <h1 className="mb-3 font-display text-2xl font-extrabold">{post.title}</h1>
-                <p className="mb-4 whitespace-pre-line text-sm leading-relaxed text-white">{post.content}</p>
+                <h1 className="mb-3 break-words font-display text-2xl font-extrabold [overflow-wrap:anywhere]">{post.title}</h1>
+                <p className="mb-4 whitespace-pre-line break-words text-sm leading-relaxed text-white [overflow-wrap:anywhere]">{post.content}</p>
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 text-xs text-muted">
                     <div className="flex items-center gap-4">
                         <span className="font-semibold text-white">{shortUserId(post.user_id)}</span>

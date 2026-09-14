@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { clientFetch } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/envelope";
 import { notifyAuthStateChanged } from "@/lib/auth/auth-events";
@@ -12,6 +13,7 @@ import { FieldGroup, Input } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
 
 export function LoginForm() {
+    const t = useTranslations("Auth");
     const router = useRouter();
     const searchParams = useSearchParams();
     const next = searchParams.get("next");
@@ -35,7 +37,7 @@ export function LoginForm() {
             router.push(next && next.startsWith("/") ? next : data.redirect_to);
             router.refresh();
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : "Đăng nhập thất bại, vui lòng thử lại.");
+            setError(err instanceof ApiError ? err.message : t("loginError"));
         } finally {
             setLoading(false);
         }
@@ -44,9 +46,9 @@ export function LoginForm() {
     const googleHref = `/api/v1/auth/google${next ? `?next=${encodeURIComponent(next)}` : ""}`;
 
     return (
-        <div className="rounded-2xl border border-border bg-void-2 p-7 shadow-[0_12px_52px_rgba(0,0,0,.6)]">
-            <p className="font-display text-xl font-extrabold">Đăng nhập</p>
-            <p className="mb-6 text-sm text-muted">Chào mừng quay lại Nightlife.vn</p>
+        <div className="min-w-0 rounded-xl border border-border bg-void-2 p-5 shadow-[0_12px_52px_rgba(0,0,0,.6)] sm:p-7">
+            <p className="font-display text-xl font-extrabold">{t("loginTitle")}</p>
+            <p className="mb-6 text-sm text-muted">{t("welcomeBack")}</p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <FieldGroup label="Email">
@@ -59,7 +61,7 @@ export function LoginForm() {
                         autoComplete="email"
                     />
                 </FieldGroup>
-                <FieldGroup label="Mật khẩu">
+                <FieldGroup label={t("password")}>
                     <Input
                         type="password"
                         required
@@ -71,13 +73,13 @@ export function LoginForm() {
                 </FieldGroup>
                 {error && <Alert>{error}</Alert>}
                 <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+                    {loading ? t("loggingIn") : t("loginTitle")}
                 </Button>
             </form>
 
             <div className="my-5 flex items-center gap-3 text-xs text-muted-2">
                 <span className="h-px flex-1 bg-border-strong" />
-                hoặc
+                {t("or")}
                 <span className="h-px flex-1 bg-border-strong" />
             </div>
 
@@ -85,13 +87,13 @@ export function LoginForm() {
                 href={googleHref}
                 className="flex h-11 items-center justify-center gap-2 rounded-lg border-[1.5px] border-border-heavy text-sm font-semibold text-white transition-colors hover:border-amber hover:text-amber"
             >
-                Đăng nhập với Google
+                {t("googleLogin")}
             </a>
 
             <p className="mt-6 text-center text-sm text-muted">
-                Chưa có tài khoản?{" "}
+                {t("noAccount")} {" "}
                 <Link href="/register" className="font-semibold text-amber">
-                    Đăng ký
+                    {t("register")}
                 </Link>
             </p>
         </div>

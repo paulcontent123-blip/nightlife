@@ -41,7 +41,7 @@ export default async function PassportPage({ searchParams }: PageProps) {
     }
 
     return (
-        <div className="mx-auto max-w-5xl px-5 py-16 sm:px-10">
+        <div className="mx-auto min-w-0 max-w-5xl px-5 py-12 sm:px-10 sm:py-16">
             <SectionHeading
                 tag="Nightlife Passport"
                 title={

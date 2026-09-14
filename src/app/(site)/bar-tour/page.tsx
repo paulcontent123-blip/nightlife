@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { AuthException } from "@/modules/auth/auth.errors";
 import { BarTourService } from "@/modules/bar-tour/bar-tour.service";
 import type { BarTourFoodSuggestion, BarTourRecommendationResult, BarTourVenueSuggestion } from "@/lib/api/types";
@@ -8,7 +9,10 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { BarTourSearchForm } from "@/components/bar-tour/BarTourSearchForm";
 import { BarTourVenueCard } from "@/components/bar-tour/BarTourVenueCard";
 
-export const metadata: Metadata = { title: "Bar Tour · Nightlife.vn" };
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("BarTour");
+    return { title: t("metaTitle") };
+}
 
 const FILTER_KEYS = ["keyword", "city", "district", "price_range", "party_size"] as const;
 
@@ -19,6 +23,10 @@ interface PageProps {
 const barTourService = new BarTourService();
 
 export default async function BarTourPage({ searchParams }: PageProps) {
+    const [barTourT, commonT] = await Promise.all([
+        getTranslations("BarTour"),
+        getTranslations("Common"),
+    ]);
     const params = await searchParams;
     const query = new URLSearchParams();
 
@@ -46,17 +54,17 @@ export default async function BarTourPage({ searchParams }: PageProps) {
     }
 
     return (
-        <div className="mx-auto max-w-5xl px-5 py-16 sm:px-10">
+        <div className="mx-auto min-w-0 max-w-5xl px-5 py-12 sm:px-10 sm:py-16">
             <SectionHeading
-                tag="Bar Tour"
+                tag={barTourT("eyebrow")}
                 title={
                     <>
-                        Lịch trình đêm nay
+                        {barTourT("title")}
                         <br />
-                        <em className="not-italic text-amber">— để AI lo phần còn lại</em>
+                        <em className="not-italic text-amber">{barTourT("subtitle")}</em>
                     </>
                 }
-                description="Nhập mood, khu vực, số người — nhận gợi ý quán bar/club phù hợp kèm chỗ ăn trước và sau khi đi chơi."
+                description={barTourT("description")}
             />
 
             <div className="mt-6">
@@ -67,16 +75,16 @@ export default async function BarTourPage({ searchParams }: PageProps) {
 
             {loadError || !result ? (
                 <div className="mt-10">
-                    <EmptyState icon="⚠️" title="Không tải được gợi ý" description="Vui lòng thử lại sau." />
+                    <EmptyState icon="⚠️" title={barTourT("loadError")} description={commonT("tryAgain")} />
                 </div>
             ) : result.suggestions.bars.length === 0 ? (
                 <div className="mt-10">
-                    <EmptyState title="Không tìm thấy gợi ý phù hợp" description="Thử đổi từ khoá hoặc bộ lọc." />
+                    <EmptyState title={barTourT("empty")} description={barTourT("emptyDescription")} />
                 </div>
             ) : (
                 <>
                     <section className="mt-10">
-                        <p className="mb-4 font-display text-lg font-extrabold">🗺️ Lịch trình gợi ý</p>
+                        <p className="mb-4 break-words font-display text-lg font-extrabold">{barTourT("itinerary")}</p>
                         <div className="flex flex-col gap-6">
                             {result.itinerary.map((step) => (
                                 <div key={step.step}>
@@ -101,7 +109,7 @@ export default async function BarTourPage({ searchParams }: PageProps) {
 
                     <section className="mt-10">
                         <p className="mb-4 font-display text-lg font-extrabold">
-                            📋 Tất cả gợi ý ({result.suggestions.bars.length})
+                            {barTourT("allSuggestions")} ({result.suggestions.bars.length})
                         </p>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {result.suggestions.bars.map((suggestion) => (

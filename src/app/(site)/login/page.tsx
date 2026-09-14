@@ -1,8 +1,12 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { LoginForm } from "@/components/auth/LoginForm";
 
-export const metadata: Metadata = { title: "Đăng nhập · Nightlife.vn" };
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("Auth");
+    return { title: t("loginMeta") };
+}
 
 export default function LoginPage() {
     return (

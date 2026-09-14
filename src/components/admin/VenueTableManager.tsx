@@ -136,7 +136,7 @@ export function VenueTableManager({ venueId, initialTables }: { venueId: string;
 
             {showForm ? (
                 <form onSubmit={handleCreate} className="flex flex-col gap-3 rounded-lg border border-border-strong bg-void-3 p-4">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <FieldGroup label="Tên bàn">
                             <Input required value={form.table_name} onChange={(event) => setForm({ ...form, table_name: event.target.value })} />
                         </FieldGroup>

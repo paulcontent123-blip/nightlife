@@ -2,12 +2,14 @@
 
 import type { ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { CITY_LABEL, VENUE_TYPE_EMOJI, VENUE_TYPE_LABEL } from "@/lib/format";
 
 const TYPES = Object.keys(VENUE_TYPE_LABEL);
 const CITIES = Object.keys(CITY_LABEL);
 
 export function VenueFilterBar() {
+    const t = useTranslations("Common");
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -29,9 +31,9 @@ export function VenueFilterBar() {
     const activeSort = searchParams.get("sort") ?? "newest";
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
             <FilterButton active={!activeType} onClick={() => updateParam("type", null)}>
-                Tất cả
+                {t("all")}
             </FilterButton>
             {TYPES.map((type) => (
                 <FilterButton key={type} active={activeType === type} onClick={() => updateParam("type", activeType === type ? null : type)}>
@@ -47,11 +49,12 @@ export function VenueFilterBar() {
             <select
                 value={activeSort}
                 onChange={(event) => updateParam("sort", event.target.value)}
-                className="ml-auto h-9 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-2.5 text-xs font-semibold text-white outline-none focus:border-amber"
+                aria-label={t("filter")}
+                className="h-9 w-full rounded-lg border-[1.5px] border-border-strong bg-void-3 px-2.5 text-xs font-semibold text-white outline-none focus:border-amber sm:ml-auto sm:w-auto"
             >
-                <option value="newest">Mới nhất</option>
-                <option value="rating">Đánh giá cao</option>
-                <option value="popular">Phổ biến</option>
+                <option value="newest">{t("newest")}</option>
+                <option value="rating">{t("highestRated")}</option>
+                <option value="popular">{t("popular")}</option>
             </select>
         </div>
     );
@@ -63,7 +66,7 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
             type="button"
             onClick={onClick}
             className={[
-                "rounded-lg border-[1.5px] px-3.5 py-1.5 text-[13px] font-semibold transition-colors",
+                "whitespace-nowrap rounded-lg border-[1.5px] px-3.5 py-1.5 text-[13px] font-semibold transition-colors",
                 active ? "border-amber-border bg-amber-wash text-amber" : "border-border-strong text-muted hover:border-amber-border hover:text-amber",
             ].join(" ")}
         >

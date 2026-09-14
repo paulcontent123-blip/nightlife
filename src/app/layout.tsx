@@ -1,20 +1,27 @@
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import "./globals.css";
 import { PushNotificationManager } from "@/components/notifications/PushNotificationManager";
 
-export const metadata: Metadata = {
-  title: "Nightlife.vn — Bar, Club & Events Việt Nam",
-  description:
-    "Khám phá bar, club, rooftop đã xác minh, đặt bàn tức thì và đừng bỏ lỡ những Happy Hour deals mỗi ngày.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
 
-export default function RootLayout({
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [locale, messages] = await Promise.all([getLocale(), getMessages()]);
+
   return (
-    <html lang="vi" suppressHydrationWarning>
+    <html lang={locale === "zh" ? "zh-CN" : locale} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -31,8 +38,10 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-void text-white antialiased">
-        {children}
-        <PushNotificationManager />
+        <NextIntlClientProvider messages={messages}>
+          {children}
+          <PushNotificationManager />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

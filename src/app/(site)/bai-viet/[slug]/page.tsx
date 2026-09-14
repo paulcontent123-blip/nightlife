@@ -82,7 +82,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
     const headings = extractMarkdownHeadings(article.content);
 
     return (
-        <article className="mx-auto max-w-6xl px-5 py-16 sm:px-10">
+        <article className="mx-auto min-w-0 max-w-6xl px-5 py-12 sm:px-10 sm:py-16">
             <Link href="/bai-viet" className="text-sm font-semibold text-muted hover:text-amber">
                 ← Quay lại danh sách bài viết
             </Link>
@@ -93,11 +93,11 @@ export default async function ArticleDetailPage({ params }: PageProps) {
                     {article.city && <Badge tone="cyan">{article.city}</Badge>}
                     {article.target_keyword && <Badge tone="gray">{article.target_keyword}</Badge>}
                 </div>
-                <h1 className="font-display text-4xl font-extrabold leading-tight text-white md:text-5xl">
+                <h1 className="break-words font-display text-3xl font-extrabold leading-tight text-white sm:text-4xl md:text-5xl [overflow-wrap:anywhere]">
                     {article.title}
                 </h1>
                 {article.excerpt && (
-                    <p className="mt-5 text-lg leading-8 text-muted">
+                    <p className="mt-5 break-words text-base leading-7 text-muted sm:text-lg sm:leading-8">
                         {article.excerpt}
                     </p>
                 )}

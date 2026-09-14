@@ -78,7 +78,7 @@ export default async function EventDetailPage({ params }: EventPageProps) {
                         ))}
                         {event.is_free && <Badge tone="green">Miễn phí</Badge>}
                     </div>
-                    <h1 className="font-display text-3xl font-extrabold sm:text-4xl">{event.title}</h1>
+                    <h1 className="line-clamp-2 break-words font-display text-3xl font-extrabold sm:text-4xl">{event.title}</h1>
                     <p className="mt-1 text-sm text-muted">
                         {formatDate(event.event_date)} · {formatTime(event.start_time)}
                         {event.end_time ? `–${formatTime(event.end_time)}` : ""}
@@ -86,8 +86,8 @@ export default async function EventDetailPage({ params }: EventPageProps) {
                 </div>
             </div>
 
-            <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-5 py-10 sm:px-10 lg:grid-cols-[1fr_360px]">
-                <div className="flex flex-col gap-8">
+            <div className="mx-auto grid min-w-0 max-w-6xl grid-cols-1 gap-8 px-5 py-10 sm:px-10 lg:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="flex min-w-0 flex-col gap-8">
                     {event.description && (
                         <section>
                             <p className="mb-2 font-display text-lg font-extrabold">Giới thiệu</p>

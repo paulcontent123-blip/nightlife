@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { ForumListService } from "@/modules/forums/forum-list.service";
 import { ForumPostCard } from "@/components/forum/ForumPostCard";
 import { CreatePostForm } from "@/components/forum/CreatePostForm";
@@ -10,7 +11,10 @@ import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CITY_LABEL } from "@/lib/format";
 
-export const metadata: Metadata = { title: "Cộng đồng · Nightlife.vn" };
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("Forum");
+    return { title: t("metaTitle") };
+}
 
 interface PageProps {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -19,6 +23,10 @@ interface PageProps {
 const forumListService = new ForumListService();
 
 export default async function ForumPage({ searchParams }: PageProps) {
+    const [forumT, commonT] = await Promise.all([
+        getTranslations("Forum"),
+        getTranslations("Common"),
+    ]);
     const params = await searchParams;
     const city = typeof params.city === "string" ? params.city : undefined;
     const tag = typeof params.tag === "string" ? params.tag : undefined;
@@ -50,14 +58,14 @@ export default async function ForumPage({ searchParams }: PageProps) {
     }
 
     return (
-        <div className="mx-auto max-w-3xl px-5 py-16 sm:px-10">
+        <div className="mx-auto min-w-0 max-w-3xl px-5 py-12 sm:px-10 sm:py-16">
             <SectionHeading
-                tag="Cộng đồng Nightlife VN"
+                tag={forumT("eyebrow")}
                 title={
                     <>
-                        Hỏi · Chia sẻ · Khám phá
+                        {forumT("title")}
                         <br />
-                        <em className="not-italic text-amber">cùng dân chơi Việt Nam</em>
+                        <em className="not-italic text-amber">{forumT("subtitle")}</em>
                     </>
                 }
             />
@@ -70,23 +78,23 @@ export default async function ForumPage({ searchParams }: PageProps) {
 
             {venueId && (
                 <div className="mt-4 flex items-center gap-2 text-xs">
-                    <span className="text-muted">Đang lọc theo venue{venueName ? `: ${venueName}` : ""}</span>
+                    <span className="min-w-0 break-words text-muted">{forumT("filteringVenue")}{venueName ? `: ${venueName}` : ""}</span>
                     <Link href="/forum" className="font-semibold text-amber hover:underline">
-                        ✕ Bỏ lọc
+                        ✕ {forumT("removeFilter")}
                     </Link>
                 </div>
             )}
 
-            <form method="get" className="mt-6 flex flex-wrap items-center gap-2">
+            <form method="get" className="mt-6 flex min-w-0 flex-wrap items-center gap-2">
                 <input type="hidden" name="sort" value={sort} />
                 {venueId && <input type="hidden" name="venue_id" value={venueId} />}
                 {venueName && <input type="hidden" name="venue_name" value={venueName} />}
                 <select
                     name="city"
                     defaultValue={city ?? ""}
-                    className="h-9 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-2.5 text-xs text-white outline-none focus:border-amber"
+                    className="h-9 w-full min-w-0 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-2.5 text-xs text-white outline-none focus:border-amber sm:w-auto"
                 >
-                    <option value="">Tất cả thành phố</option>
+                    <option value="">{forumT("allCities")}</option>
                     {Object.entries(CITY_LABEL).map(([value, label]) => (
                         <option key={value} value={value}>
                             {label}
@@ -97,31 +105,31 @@ export default async function ForumPage({ searchParams }: PageProps) {
                     type="text"
                     name="tag"
                     defaultValue={tag}
-                    placeholder="Tìm theo tag..."
-                    className="h-9 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-2.5 text-xs text-white outline-none placeholder:text-muted-2 focus:border-amber"
+                    placeholder={forumT("tagPlaceholder")}
+                    className="h-9 w-full min-w-0 rounded-lg border-[1.5px] border-border-strong bg-void-3 px-2.5 text-xs text-white outline-none placeholder:text-muted-2 focus:border-amber sm:w-auto sm:flex-1"
                 />
                 <button type="submit" className="h-9 rounded-lg border-[1.5px] border-border-strong px-3 text-xs font-semibold text-muted hover:border-amber-border hover:text-amber">
-                    Lọc
+                    {commonT("filter")}
                 </button>
-                <div className="ml-auto flex gap-1.5">
+                <div className="flex w-full gap-1.5 sm:ml-auto sm:w-auto">
                     <Link
                         href={`/forum?${new URLSearchParams({ ...persistedParams, sort: "hot" }).toString()}`}
                         className={["rounded-lg border-[1.5px] px-3 py-1.5 text-xs font-semibold", sort === "hot" ? "border-amber-border bg-amber-wash text-amber" : "border-border-strong text-muted"].join(" ")}
                     >
-                        Nổi bật
+                        {forumT("featured")}
                     </Link>
                     <Link
                         href={`/forum?${new URLSearchParams({ ...persistedParams, sort: "new" }).toString()}`}
                         className={["rounded-lg border-[1.5px] px-3 py-1.5 text-xs font-semibold", sort === "new" ? "border-amber-border bg-amber-wash text-amber" : "border-border-strong text-muted"].join(" ")}
                     >
-                        Mới nhất
+                        {forumT("latest")}
                     </Link>
                 </div>
             </form>
 
             {result.items.length === 0 ? (
                 <div className="mt-10">
-                    <EmptyState title="Chưa có bài viết nào" description="Hãy là người đầu tiên đặt câu hỏi hoặc chia sẻ!" />
+                    <EmptyState title={forumT("empty")} description={forumT("emptyDescription")} />
                 </div>
             ) : (
                 <>

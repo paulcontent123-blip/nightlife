@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { FieldGroup, Input, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { CITY_LABEL } from "@/lib/format";
@@ -9,6 +10,8 @@ import { CITY_LABEL } from "@/lib/format";
 const PRICE_RANGES = ["$", "$$", "$$$", "$$$$"];
 
 export function BarTourSearchForm() {
+    const t = useTranslations("BarTour");
+    const commonT = useTranslations("Common");
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -33,18 +36,18 @@ export function BarTourSearchForm() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-xl border border-border bg-void-2 p-5">
-            <FieldGroup label="Bạn muốn đi chơi kiểu gì?">
+        <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-void-2 p-4 sm:p-5">
+            <FieldGroup label={t("moodLabel")}>
                 <Input
                     value={keyword}
                     onChange={(event) => setKeyword(event.target.value)}
-                    placeholder="rooftop, sinh nhật, edm, hẹn hò, happy hour..."
+                    placeholder={t("moodPlaceholder")}
                 />
             </FieldGroup>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <FieldGroup label="Thành phố">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <FieldGroup label={commonT("city")}>
                     <Select value={city} onChange={(event) => setCity(event.target.value)}>
-                        <option value="">Tất cả</option>
+                        <option value="">{commonT("all")}</option>
                         {Object.entries(CITY_LABEL).map(([value, label]) => (
                             <option key={value} value={value}>
                                 {label}
@@ -52,12 +55,12 @@ export function BarTourSearchForm() {
                         ))}
                     </Select>
                 </FieldGroup>
-                <FieldGroup label="Quận">
-                    <Input value={district} onChange={(event) => setDistrict(event.target.value)} placeholder="Quận 1" />
+                <FieldGroup label={commonT("district")}>
+                    <Input value={district} onChange={(event) => setDistrict(event.target.value)} placeholder={t("districtPlaceholder")} />
                 </FieldGroup>
-                <FieldGroup label="Mức giá">
+                <FieldGroup label={commonT("price")}>
                     <Select value={priceRange} onChange={(event) => setPriceRange(event.target.value)}>
-                        <option value="">Tất cả</option>
+                        <option value="">{commonT("all")}</option>
                         {PRICE_RANGES.map((price) => (
                             <option key={price} value={price}>
                                 {price}
@@ -65,7 +68,7 @@ export function BarTourSearchForm() {
                         ))}
                     </Select>
                 </FieldGroup>
-                <FieldGroup label="Số người">
+                <FieldGroup label={commonT("people")}>
                     <Input
                         type="number"
                         min={1}
@@ -75,8 +78,8 @@ export function BarTourSearchForm() {
                     />
                 </FieldGroup>
             </div>
-            <Button type="submit" className="self-start">
-                🔮 Gợi ý lịch trình
+            <Button type="submit" className="w-full sm:w-auto sm:self-start">
+                {t("suggest")}
             </Button>
         </form>
     );

@@ -361,7 +361,7 @@ export function ArticleForm({ article }: { article?: ArticleDetail }) {
                                 <option value="NewsArticle">NewsArticle</option>
                             </Select>
                         </FieldGroup>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <FieldGroup label="Thành phố">
                                 <Input value={form.city} onChange={(event) => update("city", event.target.value)} placeholder="hcm" />
                             </FieldGroup>

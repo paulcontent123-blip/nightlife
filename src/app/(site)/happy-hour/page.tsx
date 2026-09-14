@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { AuthException } from "@/modules/auth/auth.errors";
 import { getCurrentUserAvailabilityPerks } from "@/modules/membership/membership-availability-access";
 import { DealService } from "@/modules/deals/deal.service";
@@ -7,11 +8,18 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HappyHourDealCard } from "@/components/deals/HappyHourDealCard";
 
-export const metadata: Metadata = { title: "Happy Hour & Deals · Nightlife.vn" };
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("Deals");
+    return { title: t("metaTitle") };
+}
 
 const dealService = new DealService();
 
 export default async function HappyHourPage() {
+    const [dealsT, commonT] = await Promise.all([
+        getTranslations("Deals"),
+        getTranslations("Common"),
+    ]);
     let deals: PublicDeal[] = [];
     let loadError = false;
 
@@ -32,26 +40,26 @@ export default async function HappyHourPage() {
     }
 
     return (
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-10">
+        <div className="mx-auto min-w-0 max-w-6xl px-5 py-12 sm:px-10 sm:py-16">
             <SectionHeading
-                tag="Happy Hour & Deals"
+                tag={dealsT("eyebrow")}
                 title={
                     <>
-                        Uống nhiều hơn
+                        {dealsT("title")}
                         <br />
-                        <em className="not-italic text-amber">— tốn ít hơn</em>
+                        <em className="not-italic text-amber">{dealsT("subtitle")}</em>
                     </>
                 }
-                description="Deals Happy Hour được cập nhật từ các venue đối tác — đừng bao giờ bỏ lỡ giờ vàng giảm giá."
+                description={dealsT("description")}
             />
 
             {loadError ? (
                 <div className="mt-10">
-                    <EmptyState icon="⚠️" title="Không tải được danh sách deal" description="Vui lòng thử lại sau." />
+                    <EmptyState icon="⚠️" title={dealsT("loadError")} description={commonT("tryAgain")} />
                 </div>
             ) : deals.length === 0 ? (
                 <div className="mt-10">
-                    <EmptyState title="Chưa có deal nào đang hoạt động" description="Quay lại sau — venues đối tác cập nhật deal mỗi ngày." />
+                    <EmptyState title={dealsT("empty")} description={dealsT("emptyDescription")} />
                 </div>
             ) : (
                 <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

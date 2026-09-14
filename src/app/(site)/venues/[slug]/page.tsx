@@ -75,16 +75,16 @@ export default async function VenueDetailPage({ params }: VenuePageProps) {
                         {venue.status.is_verified && <Badge tone="green">✓ Đã xác minh</Badge>}
                         {venue.operations.is_vip_only && <Badge tone="pink">VIP Only</Badge>}
                     </div>
-                    <h1 className="font-display text-3xl font-extrabold sm:text-4xl">{venue.name}</h1>
-                    <p className="mt-1 text-sm text-muted">
+                    <h1 className="break-words font-display text-3xl font-extrabold sm:text-4xl">{venue.name}</h1>
+                    <p className="mt-1 line-clamp-2 break-words text-sm text-muted">
                         📍 {venue.address}
                         {venue.district ? ` · ${venue.district}` : ""}
                     </p>
                 </div>
             </div>
 
-            <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-5 py-10 sm:px-10 lg:grid-cols-[1fr_360px]">
-                <div className="flex flex-col gap-8">
+            <div className="mx-auto grid min-w-0 max-w-6xl grid-cols-1 gap-8 px-5 py-10 sm:px-10 lg:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="flex min-w-0 flex-col gap-8">
                     <div className="flex flex-wrap items-center gap-5 rounded-xl border border-border bg-void-2 p-4 text-sm">
                         <span className="flex items-center gap-1.5 text-amber">
                             ⭐ {venue.metrics.avg_rating ? venue.metrics.avg_rating.toFixed(1) : "Mới"}

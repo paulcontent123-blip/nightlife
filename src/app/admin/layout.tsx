@@ -4,6 +4,8 @@ import { requireAdmin } from "@/modules/auth/auth.guard";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { LogoutButton } from "@/components/layout/LogoutButton";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { AdminMobileNavigation } from "@/components/layout/AdminMobileNavigation";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
     let displayName = "Admin";
@@ -19,17 +21,21 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <div className="flex min-h-screen bg-void-3">
             <AdminSidebar />
             <div className="flex min-w-0 flex-1 flex-col">
-                <header className="flex h-16 items-center justify-between border-b border-border bg-void-2 px-5 sm:px-8">
-                    <p className="font-display text-sm font-bold text-white">Nightlife Admin</p>
-                    <div className="flex items-center gap-3">
+                <header className="relative flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border bg-void-2 px-4 sm:px-8">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <AdminMobileNavigation />
+                        <p className="hidden truncate font-display text-sm font-bold text-white sm:block">Nightlife Admin</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                         <span className="hidden text-[13px] text-muted sm:inline">
                             Xin chào, <span className="text-white">{displayName}</span>
                         </span>
+                        <LanguageSwitcher />
                         <ThemeToggle />
                         <LogoutButton />
                     </div>
                 </header>
-                <main className="flex-1 px-5 py-8 sm:px-8">{children}</main>
+                <main className="min-w-0 flex-1 px-4 py-6 sm:px-8 sm:py-8">{children}</main>
             </div>
         </div>
     );

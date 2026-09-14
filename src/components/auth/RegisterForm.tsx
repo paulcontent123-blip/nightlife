@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { clientFetch } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/envelope";
 import { notifyAuthStateChanged } from "@/lib/auth/auth-events";
@@ -12,6 +13,8 @@ import { FieldGroup, Input } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
 
 export function RegisterForm() {
+    const t = useTranslations("Auth");
+    const navigationT = useTranslations("Navigation");
     const router = useRouter();
     const searchParams = useSearchParams();
     const next = searchParams.get("next");
@@ -43,7 +46,7 @@ export function RegisterForm() {
             router.push(next && next.startsWith("/") ? next : data.redirect_to);
             router.refresh();
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : "Đăng ký thất bại, vui lòng thử lại.");
+            setError(err instanceof ApiError ? err.message : t("registerError"));
         } finally {
             setLoading(false);
         }
@@ -51,33 +54,30 @@ export function RegisterForm() {
 
     if (needsConfirmation) {
         return (
-            <div className="rounded-2xl border border-border bg-void-2 p-7 text-center shadow-[0_12px_52px_rgba(0,0,0,.6)]">
+            <div className="min-w-0 rounded-xl border border-border bg-void-2 p-5 text-center shadow-[0_12px_52px_rgba(0,0,0,.6)] sm:p-7">
                 <p className="mb-2 text-3xl">📩</p>
-                <p className="font-display text-lg font-extrabold">Kiểm tra email của bạn</p>
-                <p className="mt-2 text-sm text-muted">
-                    Chúng tôi đã gửi email xác nhận tới <span className="text-white">{email}</span>. Xác nhận xong
-                    hãy quay lại đăng nhập.
-                </p>
+                <p className="font-display text-lg font-extrabold">{t("checkEmail")}</p>
+                <p className="mt-2 break-words text-sm text-muted">{t("confirmationSent", { email })}</p>
                 <Link href="/login" className="mt-6 inline-block font-display text-sm font-bold text-amber">
-                    Đến trang đăng nhập →
+                    {t("goToLogin")} →
                 </Link>
             </div>
         );
     }
 
     return (
-        <div className="rounded-2xl border border-border bg-void-2 p-7 shadow-[0_12px_52px_rgba(0,0,0,.6)]">
-            <p className="font-display text-xl font-extrabold">Tạo tài khoản</p>
-            <p className="mb-6 text-sm text-muted">Tham gia cộng đồng nightlife Việt Nam</p>
+        <div className="min-w-0 rounded-xl border border-border bg-void-2 p-5 shadow-[0_12px_52px_rgba(0,0,0,.6)] sm:p-7">
+            <p className="font-display text-xl font-extrabold">{t("registerTitle")}</p>
+            <p className="mb-6 text-sm text-muted">{t("registerSubtitle")}</p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <FieldGroup label="Tên hiển thị">
+                <FieldGroup label={t("displayName")}>
                     <Input
                         required
                         minLength={3}
                         value={displayName}
                         onChange={(event) => setDisplayName(event.target.value)}
-                        placeholder="Nguyễn Văn A"
+                        placeholder="Nightlife User"
                         autoComplete="nickname"
                     />
                 </FieldGroup>
@@ -91,27 +91,27 @@ export function RegisterForm() {
                         autoComplete="email"
                     />
                 </FieldGroup>
-                <FieldGroup label="Mật khẩu">
+                <FieldGroup label={t("password")}>
                     <Input
                         type="password"
                         required
                         minLength={8}
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
-                        placeholder="Tối thiểu 8 ký tự"
+                        placeholder={t("passwordHint")}
                         autoComplete="new-password"
                     />
                 </FieldGroup>
                 {error && <Alert>{error}</Alert>}
                 <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Đang tạo..." : "Đăng ký"}
+                    {loading ? t("creating") : t("register")}
                 </Button>
             </form>
 
             <p className="mt-6 text-center text-sm text-muted">
-                Đã có tài khoản?{" "}
+                {t("hasAccount")} {" "}
                 <Link href="/login" className="font-semibold text-amber">
-                    Đăng nhập
+                    {navigationT("login")}
                 </Link>
             </p>
         </div>

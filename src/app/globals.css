@@ -105,6 +105,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
@@ -112,6 +113,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   transition: background-color 0.15s ease, color 0.15s ease;
+  min-width: 320px;
+  overflow-x: clip;
+}
+
+html[lang="zh-CN"] body {
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", var(--font-sans), sans-serif;
 }
 
 ::-webkit-scrollbar {

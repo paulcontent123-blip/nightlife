@@ -144,7 +144,7 @@ export function EventForm({ venueId, event }: { venueId: string; event: Event })
                 <FieldGroup label="Mô tả">
                     <Textarea value={form.description} onChange={(e) => update("description", e.target.value)} />
                 </FieldGroup>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <FieldGroup label="Ngày">
                         <Input type="date" required value={form.event_date} onChange={(e) => update("event_date", e.target.value)} />
                     </FieldGroup>
@@ -163,7 +163,7 @@ export function EventForm({ venueId, event }: { venueId: string; event: Event })
                         <Input value={form.lineup} onChange={(e) => update("lineup", e.target.value)} placeholder="DJ Tiesto, Local DJ" />
                     </FieldGroup>
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <FieldGroup label="Tuổi tối thiểu">
                         <Input type="number" min={18} max={99} value={form.age_restriction} onChange={(e) => update("age_restriction", e.target.value)} />
                     </FieldGroup>

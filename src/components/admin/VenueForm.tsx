@@ -185,7 +185,7 @@ export function VenueForm({ mode, venueId, initialVenue }: { mode: "create" | "e
                 <FieldGroup label="Địa chỉ đầy đủ">
                     <Input required value={form.address} onChange={(event) => update("address", event.target.value)} />
                 </FieldGroup>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <FieldGroup label="Quận/Khu vực">
                         <Input value={form.district} onChange={(event) => update("district", event.target.value)} />
                     </FieldGroup>
@@ -209,7 +209,7 @@ export function VenueForm({ mode, venueId, initialVenue }: { mode: "create" | "e
 
             <section className="flex flex-col gap-3">
                 <p className="font-display text-sm font-bold uppercase tracking-wide text-muted">Giá & sức chứa</p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <FieldGroup label="Cover charge (VND)">
                         <Input type="number" min={0} value={form.cover_charge} onChange={(event) => update("cover_charge", event.target.value)} />
                     </FieldGroup>

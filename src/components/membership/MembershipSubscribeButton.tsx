@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
 import { Spinner } from "@/components/ui/Spinner";
+import { useTranslations } from "next-intl";
 
 export function MembershipSubscribeButton({
     tier,
@@ -16,6 +17,7 @@ export function MembershipSubscribeButton({
     tier: PaidMembershipTierKey;
     disabledReason?: string;
 }) {
+    const t = useTranslations("Membership");
     const [expanded, setExpanded] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<"vnpay" | "momo">("vnpay");
     const [loading, setLoading] = useState(false);
@@ -33,7 +35,7 @@ export function MembershipSubscribeButton({
 
             window.location.href = result.payment.payment_url;
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : "Không thể đăng ký gói này, vui lòng thử lại.");
+            setError(err instanceof ApiError ? err.message : t("subscribeError"));
             setLoading(false);
         }
     }
@@ -49,7 +51,7 @@ export function MembershipSubscribeButton({
     if (!expanded) {
         return (
             <Button type="button" onClick={() => setExpanded(true)} className="w-full">
-                Đăng ký
+                {t("subscribe")}
             </Button>
         );
     }
@@ -62,7 +64,7 @@ export function MembershipSubscribeButton({
             </Select>
             {error && <Alert>{error}</Alert>}
             <Button type="button" onClick={handleSubscribe} disabled={loading} className="w-full">
-                {loading ? <Spinner /> : "Xác nhận đăng ký"}
+                {loading ? <Spinner /> : t("confirmSubscribe")}
             </Button>
         </div>
     );

@@ -63,7 +63,7 @@ export function PushNotificationManager() {
     }
 
     return (
-        <div className="fixed bottom-5 right-5 z-[100] w-80 rounded-xl border border-border bg-void-2 p-4 shadow-2xl">
+        <div className="fixed bottom-4 left-4 right-4 z-[100] w-auto rounded-xl border border-border bg-void-2 p-4 shadow-2xl sm:bottom-5 sm:left-auto sm:right-5 sm:w-80">
             <div className="flex items-start justify-between gap-2">
                 <div>
                     <p className="font-display text-sm font-bold text-amber">{toast.title}</p>
@@ -72,6 +72,8 @@ export function PushNotificationManager() {
                 <button
                     type="button"
                     onClick={() => setToast(null)}
+                    aria-label="Close"
+                    title="Close"
                     className="shrink-0 text-xs text-muted-2 hover:text-white"
                 >
                     ✕

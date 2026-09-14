@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 type StatusTone = "pink" | "cyan" | "amber";
 
@@ -6,17 +7,17 @@ interface HotTonightItem {
     icon: string;
     name: string;
     meta: string;
-    status: string;
+    status: "available" | "busy" | "vipAvailable" | "happyHourStatus";
     statusTone: StatusTone;
     price: string;
 }
 
 // Static illustrative content — not wired to live venue data yet.
 const HOT_TONIGHT: HotTonightItem[] = [
-    { icon: "🥃", name: "Observatory Saigon", meta: "Rooftop Bar · Q1 · ⭐ 4.9", status: "Còn bàn", statusTone: "pink", price: "Cover: 200k" },
-    { icon: "🎵", name: "Lush Nightclub", meta: "Club · Q1 · ⭐ 4.8", status: "Đông", statusTone: "pink", price: "Cover: 300k" },
-    { icon: "🎭", name: "Envy Club", meta: "Club · Q1 · ⭐ 4.7", status: "VIP avail", statusTone: "cyan", price: "Table: 2tr+" },
-    { icon: "🌿", name: "The Deck Saigon", meta: "Riverside · Q2 · ⭐ 4.9", status: "Happy hr", statusTone: "amber", price: "–50% drink" },
+    { icon: "🥃", name: "Observatory Saigon", meta: "Rooftop Bar · Q1 · ⭐ 4.9", status: "available", statusTone: "pink", price: "Cover: 200k" },
+    { icon: "🎵", name: "Lush Nightclub", meta: "Club · Q1 · ⭐ 4.8", status: "busy", statusTone: "pink", price: "Cover: 300k" },
+    { icon: "🎭", name: "Envy Club", meta: "Club · Q1 · ⭐ 4.7", status: "vipAvailable", statusTone: "cyan", price: "Table: 2tr+" },
+    { icon: "🌿", name: "The Deck Saigon", meta: "Riverside · Q2 · ⭐ 4.9", status: "happyHourStatus", statusTone: "amber", price: "-50% drink" },
 ];
 
 const STATUS_TONE_CLASSES: Record<StatusTone, string> = {
@@ -31,11 +32,12 @@ const DOT_TONE_CLASSES: Record<StatusTone, string> = {
     amber: "bg-amber",
 };
 
-export function HeroHotTonightPanel() {
+export async function HeroHotTonightPanel() {
+    const t = await getTranslations("Home");
     return (
         <div className="hidden h-full flex-col justify-center gap-2.5 border-l border-border bg-void-2 px-6 py-10 lg:flex">
             <p className="mb-1 font-display text-[11px] font-bold uppercase tracking-[1.5px] text-muted">
-                Đang hot tối nay ● LIVE
+                {t("hotTonight")}
             </p>
 
             {HOT_TONIGHT.map((item) => (
@@ -60,7 +62,7 @@ export function HeroHotTonightPanel() {
                             {item.statusTone !== "amber" && (
                                 <span className={["h-1.5 w-1.5 animate-pulse rounded-full", DOT_TONE_CLASSES[item.statusTone]].join(" ")} />
                             )}
-                            {item.status}
+                            {t(item.status)}
                         </span>
                         <p className="mt-1 text-xs font-semibold text-amber">{item.price}</p>
                     </div>
@@ -72,7 +74,7 @@ export function HeroHotTonightPanel() {
                 prefetch={false}
                 className="mt-1 block rounded-xl border border-amber-border bg-amber-wash px-4 py-3.5 text-center text-sm font-semibold text-amber transition-colors hover:bg-amber hover:text-void"
             >
-                ⚡ 14 Happy Hour deals đang active tối nay →
+                {t("dealsTonight")} →
             </Link>
         </div>
     );
