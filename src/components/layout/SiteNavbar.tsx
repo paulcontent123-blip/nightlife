@@ -130,7 +130,7 @@ export function SiteNavbar() {
                 <Link href="/" prefetch={false} className="flex min-w-0 shrink-0 items-center gap-2.5" onClick={() => setMobileOpen(false)}>
                     <span className="h-[7px] w-[7px] shrink-0 animate-pulse rounded-full bg-pink" />
                     <span className="whitespace-nowrap font-display text-[18px] font-extrabold">
-                        <span className="text-amber">Night</span>life.vn
+                        <span className="text-amber">Nigh</span>life
                     </span>
                 </Link>
 
