@@ -105,7 +105,13 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: clip;
+  /* "hidden" (not "clip") on the root: "clip" makes html/body a strict
+     clipping container for fixed/absolute descendants too, and subpixel
+     rounding at fractional browser zoom levels can push the fixed navbar
+     just outside that clip box, making it disappear. "hidden" on the root
+     keeps the long-standing browser behavior of only suppressing the
+     scrollbar without clipping viewport-fixed content. */
+  overflow-x: hidden;
 }
 
 body {
@@ -114,7 +120,7 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   transition: background-color 0.15s ease, color 0.15s ease;
   min-width: 320px;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 html[lang="zh-CN"] body {
