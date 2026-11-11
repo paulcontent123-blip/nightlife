@@ -186,6 +186,8 @@ password: Admin@123456
 User
 email: standunder57@gmail.com
 password: password123
+
+
 ```
 
 ## 7. Main API Endpoints
