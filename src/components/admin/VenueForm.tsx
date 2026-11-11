@@ -8,6 +8,7 @@ import type { CreateVenueDTO, UpdateVenueDTO, Venue } from "@/lib/api/types";
 import { Button } from "@/components/ui/Button";
 import { FieldGroup, Input, Select, Textarea } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
+import { VenueLocationPicker } from "@/components/admin/VenueLocationPicker";
 import { VENUE_TYPE_LABEL } from "@/lib/format";
 
 const VENUE_TYPES = Object.keys(VENUE_TYPE_LABEL);
@@ -54,8 +55,10 @@ function toFormState(venue?: Venue): VenueFormState {
         address: venue?.address ?? "",
         district: venue?.district ?? "",
         city: venue?.city ?? "hcm",
-        lat: venue?.location.lat != null ? String(venue.location.lat) : "10.7769",
-        lng: venue?.location.lng != null ? String(venue.location.lng) : "106.7009",
+        // No default coordinates: a new venue must be pinned explicitly, otherwise
+        // it silently ends up on the District 1 placeholder.
+        lat: venue?.location.lat != null ? String(venue.location.lat) : "",
+        lng: venue?.location.lng != null ? String(venue.location.lng) : "",
         cover_charge: venue ? String(venue.pricing.cover_charge) : "0",
         price_range: venue?.pricing.price_range ?? "$$",
         capacity: venue?.pricing.capacity != null ? String(venue.pricing.capacity) : "",
@@ -185,7 +188,7 @@ export function VenueForm({ mode, venueId, initialVenue }: { mode: "create" | "e
                 <FieldGroup label="Địa chỉ đầy đủ">
                     <Input required value={form.address} onChange={(event) => update("address", event.target.value)} />
                 </FieldGroup>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <FieldGroup label="Quận/Khu vực">
                         <Input value={form.district} onChange={(event) => update("district", event.target.value)} />
                     </FieldGroup>
@@ -198,13 +201,16 @@ export function VenueForm({ mode, venueId, initialVenue }: { mode: "create" | "e
                             ))}
                         </Select>
                     </FieldGroup>
-                    <FieldGroup label="Lat">
-                        <Input type="number" step="any" required value={form.lat} onChange={(event) => update("lat", event.target.value)} />
-                    </FieldGroup>
-                    <FieldGroup label="Lng">
-                        <Input type="number" step="any" required value={form.lng} onChange={(event) => update("lng", event.target.value)} />
-                    </FieldGroup>
                 </div>
+                <VenueLocationPicker
+                    lat={form.lat}
+                    lng={form.lng}
+                    address={[form.address, form.district].filter((part) => part.trim()).join(", ")}
+                    onChange={(lat, lng) => {
+                        setForm((prev) => ({ ...prev, lat, lng }));
+                        setSaved(false);
+                    }}
+                />
             </section>
 
             <section className="flex flex-col gap-3">
