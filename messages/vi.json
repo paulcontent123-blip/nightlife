@@ -277,5 +277,29 @@
     "cookie": "Cookie",
     "sitemap": "Sitemap",
     "backToMain": "Về trang chính"
+  },
+  "Nearby": {
+    "nearMe": "Gần tôi",
+    "locating": "Đang lấy vị trí…",
+    "chooseArea": "Chọn khu vực",
+    "areasTitle": "Chọn một khu vực",
+    "denied": "Bạn đã chặn quyền vị trí. Bật lại bằng biểu tượng ổ khoá cạnh thanh địa chỉ, hoặc chọn khu vực bên dưới.",
+    "unavailable": "Không xác định được vị trí của bạn. Hãy thử lại hoặc chọn khu vực.",
+    "timeout": "Lấy vị trí quá lâu. Hãy thử lại hoặc chọn khu vực.",
+    "unsupported": "Trình duyệt này không lấy được vị trí. Hãy chọn khu vực bên dưới.",
+    "inApp": "Bạn đang mở trang trong ứng dụng (Zalo, Facebook…) nên có thể không lấy được vị trí. Hãy mở bằng Chrome hoặc Safari.",
+    "retry": "Thử lại",
+    "close": "Đóng",
+    "privacy": "Vị trí chỉ dùng để tìm venue gần bạn và không được lưu lại.",
+    "nearYou": "Venue gần bạn",
+    "nearArea": "Venue gần {area}",
+    "radius": "Bán kính",
+    "showAll": "Xem tất cả venue",
+    "inaccurate": "Vị trí lấy từ máy tính có thể lệch khoảng {distance}. Nếu kết quả chưa đúng, hãy chọn khu vực.",
+    "empty": "Không có venue nào trong bán kính {radius}.",
+    "emptyHint": "Thử tăng bán kính hoặc chọn khu vực khác.",
+    "found": "{count, plural, other {# venue}} trong bán kính {radius}",
+    "away": "Cách {distance}",
+    "directions": "Chỉ đường"
   }
 }

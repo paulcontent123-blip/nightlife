@@ -5,7 +5,16 @@ import { formatVnd, VENUE_TYPE_EMOJI, VENUE_TYPE_LABEL } from "@/lib/format";
 import { getOptimizedCloudinaryImageUrl } from "@/lib/cloudinary/image-url";
 import { getTranslations } from "next-intl/server";
 
-export async function VenueCard({ venue, priority = false }: { venue: VenueListItem; priority?: boolean }) {
+export async function VenueCard({
+    venue,
+    priority = false,
+    distanceLabel,
+}: {
+    venue: VenueListItem;
+    priority?: boolean;
+    // Shown in "near me" mode, e.g. "1,2 km".
+    distanceLabel?: string;
+}) {
     const [venuesT, commonT] = await Promise.all([
         getTranslations("Venues"),
         getTranslations("Common"),
@@ -41,6 +50,11 @@ export async function VenueCard({ venue, priority = false }: { venue: VenueListI
                 {venue.status.is_verified && (
                     <Badge tone="green" className="absolute right-3 top-3">
                         ✓ {venuesT("verified")}
+                    </Badge>
+                )}
+                {distanceLabel && (
+                    <Badge tone="cyan" className="absolute bottom-3 left-3">
+                        📍 {distanceLabel}
                     </Badge>
                 )}
             </div>

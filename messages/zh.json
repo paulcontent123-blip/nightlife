@@ -277,5 +277,29 @@
     "cookie": "Cookie",
     "sitemap": "网站地图",
     "backToMain": "返回主站"
+  },
+  "Nearby": {
+    "nearMe": "附近",
+    "locating": "正在获取位置…",
+    "chooseArea": "选择区域",
+    "areasTitle": "选择一个区域",
+    "denied": "位置权限已被阻止。请点击地址栏旁的锁形图标重新开启,或在下方选择区域。",
+    "unavailable": "无法确定你的位置。请重试或选择区域。",
+    "timeout": "获取位置超时。请重试或选择区域。",
+    "unsupported": "此浏览器无法获取位置。请在下方选择区域。",
+    "inApp": "你正在应用内浏览器(Zalo、Facebook 等)中打开,可能无法获取位置。请用 Chrome 或 Safari 打开。",
+    "retry": "重试",
+    "close": "关闭",
+    "privacy": "位置仅用于查找附近的场所,不会被保存。",
+    "nearYou": "你附近的场所",
+    "nearArea": "{area} 附近的场所",
+    "radius": "半径",
+    "showAll": "查看全部场所",
+    "inaccurate": "电脑获取的位置可能偏差约 {distance}。如结果不准确,请选择区域。",
+    "empty": "{radius} 范围内没有场所。",
+    "emptyHint": "请扩大半径或选择其他区域。",
+    "found": "{radius} 范围内有 {count} 个场所",
+    "away": "距离 {distance}",
+    "directions": "路线"
   }
 }

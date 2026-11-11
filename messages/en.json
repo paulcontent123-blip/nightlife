@@ -277,5 +277,29 @@
     "cookie": "Cookies",
     "sitemap": "Sitemap",
     "backToMain": "Back to main site"
+  },
+  "Nearby": {
+    "nearMe": "Near me",
+    "locating": "Getting your location…",
+    "chooseArea": "Choose an area",
+    "areasTitle": "Choose an area",
+    "denied": "Location access is blocked. Re-enable it from the lock icon next to the address bar, or choose an area below.",
+    "unavailable": "Your location could not be determined. Try again or choose an area.",
+    "timeout": "Getting your location took too long. Try again or choose an area.",
+    "unsupported": "This browser cannot share your location. Choose an area below.",
+    "inApp": "You are inside an app browser (Zalo, Facebook…), which may block location. Open this page in Chrome or Safari.",
+    "retry": "Try again",
+    "close": "Close",
+    "privacy": "Your location is only used to find nearby venues and is never stored.",
+    "nearYou": "Venues near you",
+    "nearArea": "Venues near {area}",
+    "radius": "Radius",
+    "showAll": "Show all venues",
+    "inaccurate": "Locations from a computer can be off by about {distance}. If results look wrong, choose an area.",
+    "empty": "No venues within {radius}.",
+    "emptyHint": "Try a larger radius or another area.",
+    "found": "{count, plural, one {# venue} other {# venues}} within {radius}",
+    "away": "{distance} away",
+    "directions": "Directions"
   }
 }

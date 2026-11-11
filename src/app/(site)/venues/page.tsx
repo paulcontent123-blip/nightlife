@@ -4,6 +4,9 @@ import { getTranslations } from "next-intl/server";
 import { VenueFilterBar } from "@/components/venues/VenueFilterBar";
 import { VenueResults } from "@/components/venues/VenueResults";
 import { VenueResultsSkeleton } from "@/components/venues/VenueResultsSkeleton";
+import { NearMeButton } from "@/components/venues/NearMeButton";
+import { NearbyVenueResults } from "@/components/venues/NearbyVenueResults";
+import { readNearbyParams } from "@/lib/geo/nearby";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,6 +36,10 @@ export default async function VenuesPage({ searchParams }: VenuesPageProps) {
     query.set("page", page);
     query.set("limit", "12");
 
+    // "Near me" mode: ?lat=&lng=&radius= (set by NearMeButton or an area chip).
+    const nearby = readNearbyParams(params);
+    const pageNumber = Math.max(1, Number.parseInt(page, 10) || 1);
+
     return (
         <div className="mx-auto min-w-0 max-w-6xl px-5 py-12 sm:px-10 sm:py-16">
             <SectionHeading
@@ -46,15 +53,24 @@ export default async function VenuesPage({ searchParams }: VenuesPageProps) {
                 }
             />
 
-            <div className="mt-6">
-                <Suspense fallback={null}>
-                    <VenueFilterBar />
+            {nearby ? (
+                <Suspense key={`${nearby.lat},${nearby.lng},${nearby.radius},${pageNumber}`} fallback={<VenueResultsSkeleton />}>
+                    <NearbyVenueResults nearby={nearby} page={pageNumber} />
                 </Suspense>
-            </div>
+            ) : (
+                <>
+                    <div className="mt-6 flex flex-col gap-3">
+                        <NearMeButton />
+                        <Suspense fallback={null}>
+                            <VenueFilterBar />
+                        </Suspense>
+                    </div>
 
-            <Suspense fallback={<VenueResultsSkeleton />}>
-                <VenueResults queryString={query.toString()} />
-            </Suspense>
+                    <Suspense fallback={<VenueResultsSkeleton />}>
+                        <VenueResults queryString={query.toString()} />
+                    </Suspense>
+                </>
+            )}
         </div>
     );
 }
