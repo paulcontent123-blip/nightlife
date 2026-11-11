@@ -11,6 +11,7 @@ import { VenueDealsList } from "@/components/venues/VenueDealsList";
 import { VenueReviewsList } from "@/components/venues/VenueReviewsList";
 import { VenueUpcomingEvents } from "@/components/venues/VenueUpcomingEvents";
 import { VenueForumDiscussion } from "@/components/venues/VenueForumDiscussion";
+import { VenueLocationMap } from "@/components/venues/VenueLocationMap";
 import { WriteVenueReviewSection } from "@/components/venues/WriteVenueReviewSection";
 import { formatVnd, VENUE_TYPE_EMOJI, VENUE_TYPE_LABEL } from "@/lib/format";
 
@@ -157,6 +158,14 @@ export default async function VenueDetailPage({ params }: VenuePageProps) {
                             </div>
                         </section>
                     )}
+
+                    <VenueLocationMap
+                        name={venue.name}
+                        address={venue.address}
+                        district={venue.district}
+                        lat={venue.location.lat}
+                        lng={venue.location.lng}
+                    />
 
                     <VenueReviewsList reviews={venue.reviews} />
 
