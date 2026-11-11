@@ -52,12 +52,22 @@ export const TICKET_ORDER_STATUS_LABEL: Record<string, string> = {
     pending: "Chờ xác nhận",
     paid: "Đã phát hành vé",
     refunded: "Đã hoàn tiền",
+    cancelled: "Đã huỷ",
 };
 
 export const TICKET_STATUS_LABEL: Record<string, string> = {
     valid: "Còn hiệu lực",
     used: "Đã sử dụng",
     refunded: "Đã hoàn tiền",
+    cancelled: "Đã huỷ",
+};
+
+export const PAYMENT_METHOD_LABEL: Record<string, string> = {
+    cash: "Tiền mặt tại quầy",
+    vnpay: "VNPay",
+    momo: "MoMo",
+    stripe: "Stripe",
+    bank_transfer: "Chuyển khoản QR",
 };
 
 export const BOOKING_STATUS_LABEL: Record<string, string> = {

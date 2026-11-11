@@ -155,7 +155,21 @@ export const AuthError = {
 
     INVALID_ARTICLE_IMAGE: "Article image must be an image file",
 
-    ARTICLE_IMAGE_UPLOAD_FAILED: "Could not upload article image"
+    ARTICLE_IMAGE_UPLOAD_FAILED: "Could not upload article image",
+
+    BANK_TRANSFER_NOT_CONFIGURED: "Bank transfer is not available: no receiving bank account is active",
+
+    BANK_TRANSFER_NOT_FOUND: "Bank transfer payment not found",
+
+    BANK_TRANSFER_INVALID_STATUS: "This payment cannot be updated in its current status",
+
+    BANK_TRANSFER_HOLD_EXPIRED: "The ticket hold has expired. Please start the purchase again",
+
+    PAYMENT_METHOD_MISMATCH: "This order must be paid by bank transfer and reconciled by an admin",
+
+    PAYMENT_ALREADY_PROCESSED: "This payment reference has already been processed",
+
+    PAYMENT_ACCOUNT_NOT_FOUND: "Payment account not found"
 
 };
 

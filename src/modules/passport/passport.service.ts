@@ -121,29 +121,18 @@ export class PassportService {
         sourceId: string;
         description: string;
     }) {
-        const existingTransaction = await this.repository.findTransaction(
-            input.userId,
-            input.sourceType,
-            input.sourceId
-        );
-
-        if (existingTransaction) {
-            return {
-                awarded: false,
-                transaction: existingTransaction,
-                balance: existingTransaction.balance_after,
-            };
-        }
-
-        const transaction = await this.addPointTransaction(input);
+        const { applied, transaction } = await this.applyPointChange(input);
 
         return {
-            awarded: true,
+            awarded: applied,
             transaction,
             balance: transaction.balance_after,
         };
     }
 
+    // The balance check, transaction insert and users.nightlife_passport_points
+    // update run atomically in the database (apply_passport_points), so
+    // concurrent requests cannot double-spend or double-award.
     private async addPointTransaction(input: {
         userId: string;
         points: number;
@@ -151,39 +140,35 @@ export class PassportService {
         sourceId: string;
         description: string;
     }) {
-        const currentPoints = await this.repository.findUserPoints(input.userId);
-        const nextPoints = currentPoints + input.points;
+        const { transaction } = await this.applyPointChange(input);
 
-        if (nextPoints < 0) {
-            throw new AuthException(409, "PASSPORT_INSUFFICIENT_POINTS");
+        return transaction;
+    }
+
+    private async applyPointChange(input: {
+        userId: string;
+        points: number;
+        sourceType: PassportPointSourceType;
+        sourceId: string;
+        description: string;
+    }) {
+        const result = await this.repository.applyPointTransaction({
+            user_id: input.userId,
+            points: input.points,
+            source_type: input.sourceType,
+            source_id: input.sourceId,
+            description: input.description,
+        });
+
+        if (result.applied) {
+            await this.notifyPassportMilestones({
+                userId: input.userId,
+                before: result.balanceBefore,
+                after: result.transaction.balance_after,
+            });
         }
 
-        const transaction = await this.repository.createTransaction({
-            user_id: input.userId,
-            points: input.points,
-            balance_after: nextPoints,
-            source_type: input.sourceType,
-            source_id: input.sourceId,
-            description: input.description,
-        });
-
-        await this.repository.updateUserPoints(input.userId, transaction?.balance_after ?? nextPoints);
-        await this.notifyPassportMilestones({
-            userId: input.userId,
-            before: currentPoints,
-            after: transaction?.balance_after ?? nextPoints,
-        });
-
-        return transaction ?? {
-            id: "",
-            user_id: input.userId,
-            points: input.points,
-            balance_after: nextPoints,
-            source_type: input.sourceType,
-            source_id: input.sourceId,
-            description: input.description,
-            created_at: new Date().toISOString(),
-        };
+        return result;
     }
 
     private async notifyPassportMilestones(input: {

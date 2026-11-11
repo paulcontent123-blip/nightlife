@@ -10,9 +10,10 @@ import { Alert } from "@/components/ui/Alert";
 import { Spinner } from "@/components/ui/Spinner";
 import { formatVnd } from "@/lib/format";
 
-const PAYMENT_METHODS: Array<{ value: "vnpay" | "momo"; label: string }> = [
+const PAYMENT_METHODS: Array<{ value: "vnpay" | "momo" | "bank_transfer"; label: string }> = [
     { value: "vnpay", label: "VNPay" },
     { value: "momo", label: "MoMo" },
+    { value: "bank_transfer", label: "Chuyển khoản QR (giữ vé 15 phút)" },
 ];
 
 export function TicketPurchaseWidget({ slug, initialTiers }: { slug: string; initialTiers?: TicketTier[] }) {
@@ -22,7 +23,7 @@ export function TicketPurchaseWidget({ slug, initialTiers }: { slug: string; ini
         initialTiers?.find((tier) => tier.available > 0)?.id ?? initialTiers?.[0]?.id ?? null
     );
     const [quantity, setQuantity] = useState(1);
-    const [paymentMethod, setPaymentMethod] = useState<"vnpay" | "momo">("vnpay");
+    const [paymentMethod, setPaymentMethod] = useState<"vnpay" | "momo" | "bank_transfer">("vnpay");
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [requiresLogin, setRequiresLogin] = useState(false);

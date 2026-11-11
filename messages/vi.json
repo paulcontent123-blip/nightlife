@@ -219,6 +219,7 @@
     "transactionCode": "Mã giao dịch",
     "loginToSubscribe": "Đăng nhập để đăng ký",
     "pendingReason": "Bạn đang có đăng ký chờ xử lý",
+    "viewBankTransfer": "Xem thông tin chuyển khoản",
     "allVenues": "Đặt bàn tại tất cả venues",
     "viewDeals": "Xem Happy Hour deals",
     "priorityHours": "Ưu tiên đặt bàn {hours}h trước",

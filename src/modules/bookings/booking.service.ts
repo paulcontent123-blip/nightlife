@@ -93,6 +93,7 @@ export class BookingService {
             deposit_amount: table.deposit_required,
             deposit_paid: dto.payment_method === "cash" ? table.deposit_required === 0 : false,
             payment_ref: null,
+            payment_method: dto.payment_method ?? null,
         });
 
         logBookingLifecycle("booking_pending_created", {
@@ -164,11 +165,6 @@ export class BookingService {
         });
 
         await this.afterBookingMutation(booking.venue_id);
-        await this.passportService.awardVenueCheckinPoints({
-            userId: updatedBooking.user_id,
-            venueId: updatedBooking.venue_id,
-            bookingId: updatedBooking.id,
-        });
 
         return updatedBooking;
     }
@@ -233,6 +229,7 @@ export class BookingService {
         });
 
         await this.afterBookingMutation(booking.venue_id);
+        await this.awardCheckinPoints(updatedBooking);
 
         return updatedBooking;
     }
@@ -367,6 +364,25 @@ export class BookingService {
         }
     }
 
+    // Points are awarded once per booking (idempotent by booking id) when the
+    // guest is actually checked in. A points failure must not fail check-in.
+    private async awardCheckinPoints(
+        booking: NonNullable<Awaited<ReturnType<BookingRepository["findById"]>>>
+    ) {
+        try {
+            await this.passportService.awardVenueCheckinPoints({
+                userId: booking.user_id,
+                venueId: booking.venue_id,
+                bookingId: booking.id,
+            });
+        } catch (error) {
+            console.error("Venue check-in points award failed", {
+                booking_id: booking.id,
+                error,
+            });
+        }
+    }
+
     private async scheduleBookingReminder(
         booking: Awaited<ReturnType<BookingRepository["findById"]>>
     ) {
@@ -403,7 +419,7 @@ export class BookingService {
         openHours: Record<string, string> | null | undefined,
         date: string
     ) {
-        const dayKey = DAY_KEYS[this.readDateInVietnamTimezone(date).getDay()];
+        const dayKey = DAY_KEYS[this.readDayOfWeek(date)];
         const schedule = openHours?.[dayKey];
 
         if (!schedule) {
@@ -445,7 +461,10 @@ export class BookingService {
         return `${hours}:${minutes}`;
     }
 
-    private readDateInVietnamTimezone(date: string) {
-        return new Date(`${date}T00:00:00+07:00`);
+    // booking_date is a calendar date (YYYY-MM-DD) in Vietnam. Its weekday does
+    // not depend on any timezone, so read it in UTC to stay independent of the
+    // server's TZ (getDay() on a +07:00 instant returns the previous day on UTC hosts).
+    private readDayOfWeek(date: string) {
+        return new Date(`${date}T00:00:00Z`).getUTCDay();
     }
 }

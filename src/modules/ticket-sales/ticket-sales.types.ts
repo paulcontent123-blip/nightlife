@@ -1,13 +1,13 @@
-import type { PaymentProvider } from "@/modules/payments/payment.types";
+import type { PaymentMethod } from "@/modules/payments/payment.types";
 
-export type TicketOrderStatus = "pending" | "paid" | "refunded";
+export type TicketOrderStatus = "pending" | "paid" | "refunded" | "cancelled";
 
-export type TicketStatus = "valid" | "used" | "refunded";
+export type TicketStatus = "valid" | "used" | "refunded" | "cancelled";
 
 export interface PurchaseTicketDTO {
     tier_id: string;
     quantity: number;
-    payment_method: PaymentProvider;
+    payment_method: PaymentMethod;
 }
 
 export interface TicketOrderRow {
@@ -17,7 +17,8 @@ export interface TicketOrderRow {
     total_amount: number;
     platform_fee: number;
     status: TicketOrderStatus;
-    payment_method: PaymentProvider | null;
+    payment_method: PaymentMethod | null;
+    payment_claimed_at: string | null;
     payment_ref: string | null;
     created_at: string;
 }
@@ -52,8 +53,9 @@ export interface CreateTicketOrderInput {
     eventId: string;
     totalAmount: number;
     platformFee: number;
-    paymentMethod: PaymentProvider;
+    paymentMethod: PaymentMethod;
     paymentRef: string;
+    paymentClaimedAt?: string | null;
 }
 
 export interface TicketTierSaleRow {

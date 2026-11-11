@@ -1,6 +1,6 @@
 export type BookingStatus = "pending" | "confirmed" | "seated" | "completed" | "cancelled" | "no_show";
 
-export type BookingPaymentMethod = "vnpay" | "momo" | "stripe" | "cash";
+export type BookingPaymentMethod = "vnpay" | "momo" | "stripe" | "cash" | "bank_transfer";
 
 export interface CreateBookingDTO {
     venue_id: string;
@@ -37,6 +37,8 @@ export interface BookingRow {
     deposit_amount: number;
     deposit_paid: boolean;
     payment_ref: string | null;
+    payment_method: BookingPaymentMethod | null;
+    payment_claimed_at: string | null;
     confirmed_at: string | null;
     cancelled_at: string | null;
     reminder_push_sent_at: string | null;
@@ -56,6 +58,7 @@ export interface BookingRecord {
     deposit_amount: number;
     deposit_paid: boolean;
     payment_ref: string | null;
+    payment_method?: BookingPaymentMethod | null;
 }
 
 export type BookingUpdateRecord = Partial<Pick<
@@ -65,5 +68,7 @@ export type BookingUpdateRecord = Partial<Pick<
     | "confirmed_at"
     | "deposit_paid"
     | "payment_ref"
+    | "payment_method"
+    | "payment_claimed_at"
     | "reminder_push_sent_at"
 >>;

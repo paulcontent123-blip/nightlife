@@ -4,7 +4,6 @@ import { mapPassportPointTransaction } from "./passport.mapper";
 import type {
     AdminPassportTransactionQuery,
     PassportMineQuery,
-    PassportPointSourceType,
     PassportPointTransactionRecord,
     PassportPointTransactionRow,
 } from "./passport.types";
@@ -31,49 +30,41 @@ export class PassportRepository {
         return data?.nightlife_passport_points ?? 0;
     }
 
-    async updateUserPoints(userId: string, points: number) {
-        const { error } = await this.supabase
-            .from(USERS_TABLE)
-            .update({ nightlife_passport_points: points })
-            .eq("id", userId);
+    // Atomically applies a point change via the apply_passport_points SQL
+    // function: locks the user row, rejects negative balances, and returns the
+    // existing transaction (applied=false) when the source was already used.
+    async applyPointTransaction(input: PassportPointChangeInput): Promise<PassportPointChangeResult> {
+        const { data, error } = await this.supabase.rpc("apply_passport_points", {
+            p_user_id: input.user_id,
+            p_points: input.points,
+            p_source_type: input.source_type,
+            p_source_id: input.source_id,
+            p_description: input.description ?? null,
+        });
 
         if (error) {
-            throw new AuthException(500, "DATABASE_ERROR", error.message);
-        }
-    }
+            if (error.message?.includes("PASSPORT_INSUFFICIENT_POINTS")) {
+                throw new AuthException(409, "PASSPORT_INSUFFICIENT_POINTS");
+            }
 
-    async findTransaction(userId: string, sourceType: PassportPointSourceType, sourceId: string) {
-        const { data, error } = await this.supabase
-            .from(PASSPORT_POINT_TRANSACTIONS_TABLE)
-            .select("*")
-            .eq("user_id", userId)
-            .eq("source_type", sourceType)
-            .eq("source_id", sourceId)
-            .maybeSingle<PassportPointTransactionRow>();
-
-        if (error) {
-            throw new AuthException(500, "DATABASE_ERROR", error.message);
-        }
-
-        return data ? mapPassportPointTransaction(data) : null;
-    }
-
-    async createTransaction(input: PassportPointTransactionRecord) {
-        const { data, error } = await this.supabase
-            .from(PASSPORT_POINT_TRANSACTIONS_TABLE)
-            .insert(input)
-            .select("*")
-            .single<PassportPointTransactionRow>();
-
-        if (error) {
-            if (isUniqueViolation(error)) {
-                return this.findTransaction(input.user_id, input.source_type, input.source_id);
+            if (error.message?.includes("PASSPORT_USER_NOT_FOUND")) {
+                throw new AuthException(404, "USER_NOT_FOUND");
             }
 
             throw new AuthException(500, "DATABASE_ERROR", error.message);
         }
 
-        return mapPassportPointTransaction(data);
+        const result = data as {
+            applied: boolean;
+            balance_before: number;
+            transaction: PassportPointTransactionRow;
+        };
+
+        return {
+            applied: result.applied,
+            balanceBefore: result.balance_before,
+            transaction: mapPassportPointTransaction(result.transaction),
+        };
     }
 
     async listTransactions(userId: string, query: PassportMineQuery) {
@@ -156,6 +147,10 @@ export class PassportRepository {
 
 }
 
-function isUniqueViolation(error: unknown) {
-    return Boolean(error && typeof error === "object" && (error as { code?: unknown }).code === "23505");
+export type PassportPointChangeInput = Omit<PassportPointTransactionRecord, "balance_after">;
+
+export interface PassportPointChangeResult {
+    applied: boolean;
+    balanceBefore: number;
+    transaction: ReturnType<typeof mapPassportPointTransaction>;
 }

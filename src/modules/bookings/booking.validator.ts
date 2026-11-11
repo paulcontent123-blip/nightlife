@@ -11,7 +11,7 @@ export const CreateBookingSchema = z.object({
     booking_time: TimeSchema,
     party_size: z.number().int().positive().max(100),
     special_requests: z.string().max(1000).nullable().optional(),
-    payment_method: z.enum(["vnpay", "momo", "stripe", "cash"]).optional(),
+    payment_method: z.enum(["vnpay", "momo", "stripe", "cash", "bank_transfer"]).optional(),
 });
 
 export const BookingListQuerySchema = z.object({

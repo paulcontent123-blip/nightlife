@@ -219,6 +219,7 @@
     "transactionCode": "交易编号",
     "loginToSubscribe": "登录后订阅",
     "pendingReason": "你已有一个等待处理的订阅",
+    "viewBankTransfer": "查看银行转账信息",
     "allVenues": "预订所有场所",
     "viewDeals": "查看欢乐时光优惠",
     "priorityHours": "可提前 {hours} 小时预订",

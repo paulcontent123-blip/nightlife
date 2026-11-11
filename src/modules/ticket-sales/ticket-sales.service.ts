@@ -10,10 +10,16 @@ import {
 } from "@/lib/redis/server";
 import { AuthException } from "@/modules/auth/auth.errors";
 import type { UserProfile } from "@/modules/auth/auth.types";
+import { BANK_TRANSFER_TICKET_HOLD_MINUTES } from "@/modules/bank-transfer/bank-transfer.constants";
+import {
+    createBankTransferPaymentUrlPath,
+    createBankTransferRef,
+} from "@/modules/bank-transfer/bank-transfer.reference";
+import { PaymentAccountRepository } from "@/modules/bank-transfer/payment-account.repository";
 import { NotificationJobService } from "@/modules/notifications/jobs/notification-job.service";
 import { TicketNotificationService } from "@/modules/notifications/ticket-notification.service";
 import { PassportService } from "@/modules/passport/passport.service";
-import type { PaymentIpnDTO, PaymentProvider } from "@/modules/payments/payment.types";
+import type { PaymentIpnDTO, PaymentMethod, PaymentProvider } from "@/modules/payments/payment.types";
 import { TicketSalesRepository } from "./ticket-sales.repository";
 import type { PurchaseTicketDTO, TicketTierSaleRow } from "./ticket-sales.types";
 import {
@@ -23,14 +29,13 @@ import {
 } from "./ticket-sales.validator";
 
 const TICKET_LOCK_MINUTES = 5;
-const TICKET_HOLD_TTL_SECONDS = TICKET_LOCK_MINUTES * 60;
 const TICKET_HOLD_SET_TTL_SECONDS = 60 * 60;
 const PAYMENT_RECEIVED_TTL_SECONDS = 7 * 24 * 60 * 60;
 const PLATFORM_FEE_RATE = 0.05;
 
 type TicketHold = {
     payment_ref: string;
-    provider: PaymentProvider;
+    provider: PaymentMethod;
     user_id: string;
     event_id: string;
     event_slug: string;
@@ -60,7 +65,8 @@ export class TicketSalesService {
         private repository = new TicketSalesRepository(),
         private notificationService = new TicketNotificationService(),
         private passportService = new PassportService(),
-        private notificationJobService = new NotificationJobService()
+        private notificationJobService = new NotificationJobService(),
+        private paymentAccountRepository = new PaymentAccountRepository()
     ) { }
 
     async purchaseTickets(eventSlug: string, input: PurchaseTicketDTO, user: UserProfile) {
@@ -79,6 +85,12 @@ export class TicketSalesService {
 
         this.ensureTierSaleWindow(tier);
 
+        const isBankTransfer = dto.payment_method === "bank_transfer";
+
+        if (isBankTransfer && !(await this.paymentAccountRepository.findActive())) {
+            throw new AuthException(503, "BANK_TRANSFER_NOT_CONFIGURED");
+        }
+
         const [pendingTickets, heldTickets] = await Promise.all([
             this.repository.countPendingLockedTickets(tier.id),
             this.countHeldTickets(tier.id),
@@ -91,7 +103,13 @@ export class TicketSalesService {
         }
 
         const totalAmount = tier.price * dto.quantity;
-        const paymentRef = this.createPaymentRef(dto.payment_method, eventSlug);
+        const lockMinutes = isBankTransfer ? BANK_TRANSFER_TICKET_HOLD_MINUTES : TICKET_LOCK_MINUTES;
+        const paymentRef = dto.payment_method === "bank_transfer"
+            ? createBankTransferRef("ticket_order")
+            : this.createPaymentRef(dto.payment_method, eventSlug);
+        const paymentUrl = dto.payment_method === "bank_transfer"
+            ? createSiteUrl(createBankTransferPaymentUrlPath("ticket_order", paymentRef)).toString()
+            : this.createMockPaymentUrl(dto.payment_method, paymentRef, totalAmount);
         const createdAt = new Date().toISOString();
         const hold: TicketHold = {
             payment_ref: paymentRef,
@@ -107,7 +125,7 @@ export class TicketSalesService {
             amount: totalAmount,
             platform_fee: Math.ceil(totalAmount * PLATFORM_FEE_RATE),
             created_at: createdAt,
-            expires_at: this.createLockExpiresAt(createdAt),
+            expires_at: this.createLockExpiresAt(createdAt, lockMinutes),
         };
 
         await this.writeTicketHold(hold);
@@ -138,7 +156,7 @@ export class TicketSalesService {
                 available_after_lock: available - dto.quantity,
             },
             lock: {
-                minutes: TICKET_LOCK_MINUTES,
+                minutes: lockMinutes,
                 expires_at: hold.expires_at,
                 storage: "redis: ticket:hold:{payment_ref}",
             },
@@ -147,7 +165,7 @@ export class TicketSalesService {
                 provider: dto.payment_method,
                 amount: totalAmount,
                 payment_ref: paymentRef,
-                payment_url: this.createMockPaymentUrl(dto.payment_method, paymentRef, totalAmount),
+                payment_url: paymentUrl,
             },
             next_step: "redirect_payment",
             note: "No ticket_orders or tickets are created until payment success. The temporary seat hold lives in Redis.",
@@ -158,6 +176,11 @@ export class TicketSalesService {
         const existingOrder = await this.repository.findOrderByPaymentRef(input.payment_ref);
 
         if (existingOrder) {
+            // Bank transfers are only ever confirmed by an admin, never by an IPN.
+            if (existingOrder.payment_method === "bank_transfer") {
+                throw new AuthException(409, "PAYMENT_METHOD_MISMATCH");
+            }
+
             if (input.ticket_order_id && input.ticket_order_id !== existingOrder.id) {
                 throw new AuthException(404, "PAYMENT_NOT_FOUND");
             }
@@ -182,6 +205,10 @@ export class TicketSalesService {
 
         if (!hold) {
             throw new AuthException(404, "PAYMENT_NOT_FOUND");
+        }
+
+        if (hold.provider === "bank_transfer") {
+            throw new AuthException(409, "PAYMENT_METHOD_MISMATCH");
         }
 
         if (hold.amount !== input.amount) {
@@ -266,7 +293,11 @@ export class TicketSalesService {
             throw new AuthException(409, "TICKET_ORDER_CANNOT_BE_CONFIRMED");
         }
 
-        const paymentMarker = await this.readPaymentReceivedMarker(order.id);
+        // For bank transfers the admin's own reconciliation is the proof of
+        // payment; gateway payments must have a received-payment marker.
+        const paymentMarker = order.payment_method === "bank_transfer"
+            ? true
+            : await this.readPaymentReceivedMarker(order.id);
 
         if (!paymentMarker) {
             throw new AuthException(
@@ -308,6 +339,102 @@ export class TicketSalesService {
             issued_count: tickets.length,
             email_status: "requested",
         };
+    }
+
+    // Bank transfer: resolves a payment reference to the user's live hold or
+    // to the order created when they reported the transfer.
+    async getBankTransferPayment(paymentRef: string, user: UserProfile) {
+        const order = await this.repository.findOrderByPaymentRef(paymentRef);
+
+        if (order) {
+            if (order.payment_method !== "bank_transfer" || !this.canAccess(order.user_id, user)) {
+                throw new AuthException(404, "BANK_TRANSFER_NOT_FOUND");
+            }
+
+            return { order, hold: null };
+        }
+
+        const hold = await this.readTicketHold(paymentRef);
+
+        if (hold) {
+            if (hold.provider !== "bank_transfer" || !this.canAccess(hold.user_id, user)) {
+                throw new AuthException(404, "BANK_TRANSFER_NOT_FOUND");
+            }
+
+            return { order: null, hold };
+        }
+
+        return { order: null, hold: null };
+    }
+
+    // User reports the transfer: the Redis hold becomes a pending order in the
+    // database, so the seats stay reserved until an admin reconciles it.
+    async claimBankTransfer(paymentRef: string, user: UserProfile) {
+        const existing = await this.getBankTransferPayment(paymentRef, user);
+
+        if (existing.order) {
+            return existing.order;
+        }
+
+        const hold = existing.hold;
+
+        if (!hold) {
+            throw new AuthException(409, "BANK_TRANSFER_HOLD_EXPIRED");
+        }
+
+        let order;
+
+        try {
+            order = await this.repository.createTicketOrder({
+                userId: hold.user_id,
+                eventId: hold.event_id,
+                totalAmount: hold.amount,
+                platformFee: hold.platform_fee,
+                paymentMethod: "bank_transfer",
+                paymentRef: hold.payment_ref,
+                paymentClaimedAt: new Date().toISOString(),
+            });
+        } catch (error) {
+            // A concurrent click already created the order.
+            if (error instanceof AuthException && error.code === "PAYMENT_ALREADY_PROCESSED") {
+                const concurrentOrder = await this.repository.findOrderByPaymentRef(paymentRef);
+
+                if (concurrentOrder) {
+                    return concurrentOrder;
+                }
+            }
+
+            throw error;
+        }
+
+        await this.repository.createPendingOrderTickets({
+            orderId: order.id,
+            eventId: hold.event_id,
+            tierId: hold.tier_id,
+            userId: hold.user_id,
+            quantity: hold.quantity,
+            codes: Array.from({ length: hold.quantity }, () => this.createPendingTicketCode()),
+        });
+        await this.deleteTicketHold(hold);
+
+        return order;
+    }
+
+    // Admin could not find the transfer: cancel the order and release seats.
+    async rejectBankTransferOrder(orderId: string) {
+        const order = await this.getExistingOrder(orderId);
+
+        if (order.payment_method !== "bank_transfer" || order.status !== "pending") {
+            throw new AuthException(409, "BANK_TRANSFER_INVALID_STATUS");
+        }
+
+        await this.repository.cancelOrderTickets(order.id);
+
+        return this.repository.updateOrderStatus(order.id, "cancelled");
+    }
+
+    private canAccess(ownerId: string, user: UserProfile) {
+        return ownerId === user.id || user.role === "admin";
     }
 
     async listMineTickets(user: UserProfile, searchParams: URLSearchParams) {
@@ -382,8 +509,8 @@ export class TicketSalesService {
         }
     }
 
-    private createLockExpiresAt(createdAt: string) {
-        return new Date(Date.parse(createdAt) + TICKET_LOCK_MINUTES * 60 * 1000).toISOString();
+    private createLockExpiresAt(createdAt: string, lockMinutes: number) {
+        return new Date(Date.parse(createdAt) + lockMinutes * 60 * 1000).toISOString();
     }
 
     private isHoldExpired(hold: TicketHold) {
@@ -432,9 +559,11 @@ export class TicketSalesService {
     }
 
     private async writeTicketHold(hold: TicketHold) {
+        const ttlSeconds = Math.max(1, Math.ceil((Date.parse(hold.expires_at) - Date.now()) / 1000));
+
         localTicketHolds.set(hold.payment_ref, hold);
         await Promise.all([
-            redisJsonSet(this.createTicketHoldKey(hold.payment_ref), hold, TICKET_HOLD_TTL_SECONDS),
+            redisJsonSet(this.createTicketHoldKey(hold.payment_ref), hold, ttlSeconds),
             redisSetAdd(this.createTierHoldsKey(hold.tier_id), hold.payment_ref, TICKET_HOLD_SET_TTL_SECONDS),
         ]);
     }

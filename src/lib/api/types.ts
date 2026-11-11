@@ -224,6 +224,7 @@ export interface Booking {
     reminder_push_sent_at?: string | null;
     created_at: string;
     payment_method?: BookingPaymentMethod | null;
+    payment_claimed_at?: string | null;
 }
 
 export interface CreatePaymentResult {
@@ -285,6 +286,7 @@ export interface TicketOrder {
     status: TicketOrderStatus;
     payment_method: string | null;
     payment_ref: string | null;
+    payment_claimed_at?: string | null;
     created_at: string;
 }
 
@@ -318,7 +320,7 @@ export interface PurchaseTicketsResult {
     lock: { minutes: number; expires_at: string; storage: string };
     payment: {
         required: boolean;
-        provider: "vnpay" | "momo";
+        provider: "vnpay" | "momo" | "bank_transfer";
         amount: number;
         payment_ref: string;
         payment_url: string;
@@ -388,7 +390,7 @@ export interface SubscribeMembershipResult {
     subscription: MembershipSubscription;
     payment: {
         provider: MembershipPaymentMethod;
-        mode: "mock" | "sandbox" | "production";
+        mode: "mock" | "sandbox" | "production" | "manual";
         purpose: "membership";
         amount: number;
         payment_ref: string;
@@ -640,4 +642,61 @@ export interface ArticleImageUploadResult {
     fingerprint: string;
     alt: string;
     markdown: string;
+}
+
+export type BankTransferPurpose = "booking" | "ticket_order" | "membership";
+
+export type BankTransferStatus = "awaiting_transfer" | "claimed" | "paid" | "cancelled" | "expired";
+
+export interface BankTransferInstructions {
+    purpose: BankTransferPurpose;
+    payment_ref: string;
+    amount: number;
+    status: BankTransferStatus;
+    claimed_at: string | null;
+    expires_at: string | null;
+    title: string;
+    return_url: string;
+    account: {
+        bank_name: string;
+        bank_code: string;
+        account_number: string;
+        account_name: string;
+    } | null;
+    qr_image_url: string | null;
+}
+
+export interface CreateBookingBankTransferResult {
+    booking_id: string;
+    amount: number;
+    payment_ref: string;
+    payment_url: string;
+}
+
+export interface BankTransferQueueItem {
+    purpose: BankTransferPurpose;
+    id: string;
+    payment_ref: string | null;
+    amount: number;
+    claimed_at: string | null;
+    created_at: string;
+    description: string;
+    user: { id: string; email: string | null; display_name: string | null };
+}
+
+export interface BankTransferQueue {
+    items: BankTransferQueueItem[];
+    claimed_count: number;
+}
+
+export interface PaymentAccount {
+    id: string;
+    bank_bin: string;
+    bank_code: string;
+    bank_name: string;
+    account_number: string;
+    account_name: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
 }

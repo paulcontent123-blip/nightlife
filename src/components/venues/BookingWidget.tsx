@@ -5,15 +5,23 @@ import { useRouter } from "next/navigation";
 import { clientFetch } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/envelope";
 import { supabase } from "@/lib/supabase/client";
-import type { Booking, CreatePaymentResult, VenueAvailabilityResult } from "@/lib/api/types";
+import type {
+    Booking,
+    CreateBookingBankTransferResult,
+    CreatePaymentResult,
+    VenueAvailabilityResult,
+} from "@/lib/api/types";
 import { Button } from "@/components/ui/Button";
 import { FieldGroup, Input, Select, Textarea } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
 import { Spinner } from "@/components/ui/Spinner";
 import { formatVnd } from "@/lib/format";
 
-const PAYMENT_METHODS: Array<{ value: "cash" | "vnpay" | "momo"; label: string }> = [
+type BookingPaymentChoice = "cash" | "vnpay" | "momo" | "bank_transfer";
+
+const PAYMENT_METHODS: Array<{ value: BookingPaymentChoice; label: string }> = [
     { value: "cash", label: "Tiền mặt tại quầy" },
+    { value: "bank_transfer", label: "Chuyển khoản QR" },
     { value: "vnpay", label: "VNPay" },
     { value: "momo", label: "MoMo" },
 ];
@@ -33,7 +41,7 @@ export function BookingWidget({ slug, venueId }: { slug: string; venueId: string
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
     const [specialRequests, setSpecialRequests] = useState("");
-    const [paymentMethod, setPaymentMethod] = useState<"cash" | "vnpay" | "momo">("cash");
+    const [paymentMethod, setPaymentMethod] = useState<BookingPaymentChoice>("cash");
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [requiresLogin, setRequiresLogin] = useState(false);
@@ -173,6 +181,17 @@ export function BookingWidget({ slug, venueId }: { slug: string; venueId: string
 
             if (booking.deposit.amount > 0 && (paymentMethod === "vnpay" || paymentMethod === "momo")) {
                 const payment = await clientFetch<CreatePaymentResult>(`/api/v1/payments/${paymentMethod}/create`, {
+                    method: "POST",
+                    body: JSON.stringify({ booking_id: booking.id }),
+                });
+
+                window.location.href = payment.payment_url;
+
+                return;
+            }
+
+            if (booking.deposit.amount > 0 && paymentMethod === "bank_transfer") {
+                const payment = await clientFetch<CreateBookingBankTransferResult>("/api/v1/payments/bank-transfer/booking", {
                     method: "POST",
                     body: JSON.stringify({ booking_id: booking.id }),
                 });

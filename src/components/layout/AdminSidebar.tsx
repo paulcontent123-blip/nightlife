@@ -6,6 +6,7 @@ export const ADMIN_LINKS = [
     { href: "/admin/bookings", label: "Đặt bàn", icon: "🪑" },
     { href: "/admin/ticket-orders", label: "Vé sự kiện", icon: "🎫" },
     { href: "/admin/tickets/checkin", label: "Check-in vé", icon: "✅" },
+    { href: "/admin/payments", label: "Chuyển khoản", icon: "🏦" },
     { href: "/admin/membership", label: "Membership", icon: "👑" },
     { href: "/admin/passport", label: "Passport", icon: "🧭" },
     { href: "/admin/bai-viet", label: "Bài viết SEO", icon: "📰" },

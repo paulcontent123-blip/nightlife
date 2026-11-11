@@ -45,6 +45,7 @@ export function mapMembershipSubscription(row: MembershipSubscriptionRow) {
         status: row.status,
         payment_method: row.payment_method,
         payment_ref: row.payment_ref,
+        payment_claimed_at: row.payment_claimed_at ?? null,
         starts_at: row.starts_at,
         expires_at: row.expires_at,
         auto_renewal: row.auto_renewal,

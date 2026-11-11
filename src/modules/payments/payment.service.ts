@@ -56,11 +56,18 @@ export class PaymentService {
             throw new AuthException(409, "PAYMENT_ALREADY_PAID");
         }
 
-        const paymentRef = booking.payment_ref ?? this.createPaymentRef(provider, booking.id);
+        // Switching away from bank transfer gets a fresh gateway reference, so a
+        // bank-transfer reference can never be settled through an IPN.
+        const switchingFromBankTransfer = booking.payment_method === "bank_transfer";
+        const paymentRef = booking.payment_ref && !switchingFromBankTransfer
+            ? booking.payment_ref
+            : this.createPaymentRef(provider, booking.id);
 
-        if (!booking.payment_ref) {
+        if (paymentRef !== booking.payment_ref || booking.payment_method !== provider) {
             await this.bookingRepository.update(booking.id, {
                 payment_ref: paymentRef,
+                payment_method: provider,
+                payment_claimed_at: null,
             });
         }
 
@@ -110,6 +117,11 @@ export class PaymentService {
 
         if (!booking) {
             return this.ticketSalesService.handlePaymentReceived(provider, dto);
+        }
+
+        // Bank transfers are only ever confirmed by an admin, never by an IPN.
+        if (booking.payment_method === "bank_transfer") {
+            throw new AuthException(409, "PAYMENT_METHOD_MISMATCH");
         }
 
         if (dto.booking_id && booking.id !== dto.booking_id) {

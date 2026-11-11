@@ -19,6 +19,7 @@ export function mapTicketOrder(row: TicketOrderRow) {
         status: row.status,
         payment_method: row.payment_method,
         payment_ref: row.payment_ref,
+        payment_claimed_at: row.payment_claimed_at ?? null,
         created_at: row.created_at,
     };
 }

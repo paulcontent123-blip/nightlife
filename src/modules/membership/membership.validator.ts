@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const SubscribeMembershipSchema = z.object({
     tier: z.enum(["night_pass", "black_card"]),
-    payment_method: z.enum(["vnpay", "momo"]),
+    payment_method: z.enum(["vnpay", "momo", "bank_transfer"]),
 });
 
 export const AdminMembershipSubscriptionQuerySchema = z.object({

@@ -1,6 +1,6 @@
 export type MembershipTierKey = "free" | "night_pass" | "black_card";
 export type PaidMembershipTierKey = Exclude<MembershipTierKey, "free">;
-export type MembershipPaymentMethod = "vnpay" | "momo";
+export type MembershipPaymentMethod = "vnpay" | "momo" | "bank_transfer";
 export type MembershipSubscriptionStatus =
     | "pending_payment"
     | "payment_received"
@@ -57,6 +57,7 @@ export interface MembershipSubscriptionRow {
     status: MembershipSubscriptionStatus;
     payment_method: MembershipPaymentMethod;
     payment_ref: string;
+    payment_claimed_at: string | null;
     starts_at: string | null;
     expires_at: string | null;
     auto_renewal: boolean;
@@ -67,7 +68,7 @@ export interface MembershipSubscriptionRow {
 
 export type MembershipSubscriptionRecord = Omit<
     MembershipSubscriptionRow,
-    "id" | "starts_at" | "expires_at" | "confirmed_at" | "cancelled_at" | "created_at"
+    "id" | "payment_claimed_at" | "starts_at" | "expires_at" | "confirmed_at" | "cancelled_at" | "created_at"
 >;
 
 export type MembershipSubscriptionUpdate = Partial<Omit<

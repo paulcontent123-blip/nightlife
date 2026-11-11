@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { serverFetch } from "@/lib/api/server";
@@ -98,6 +99,18 @@ export default async function MembershipPage({ searchParams }: PageProps) {
                                 {pending.status === "pending_payment" && t("completePayment")}
                                 {pending.status === "payment_received" && t("waitingApproval")} {t("transactionCode")}: {" "}
                                 <span className="break-all font-mono">{pending.payment_ref}</span>
+                                {pending.payment_method === "bank_transfer" && (
+                                    <>
+                                        {" · "}
+                                        <Link
+                                            href={`/chuyen-khoan?${new URLSearchParams({ purpose: "membership", ref: pending.payment_ref }).toString()}`}
+                                            prefetch={false}
+                                            className="font-semibold text-amber underline-offset-4 hover:underline"
+                                        >
+                                            {t("viewBankTransfer")}
+                                        </Link>
+                                    </>
+                                )}
                             </Alert>
                         </div>
                     )}

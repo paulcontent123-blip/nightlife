@@ -78,15 +78,35 @@ export class TicketSalesRepository {
                 status: "pending",
                 payment_method: input.paymentMethod,
                 payment_ref: input.paymentRef,
+                payment_claimed_at: input.paymentClaimedAt ?? null,
             })
             .select("*")
             .single<TicketOrderRow>();
 
         if (error) {
+            // ticket_orders_payment_ref_unique_idx: another request already
+            // turned this hold into an order.
+            if (error.code === "23505") {
+                throw new AuthException(409, "PAYMENT_ALREADY_PROCESSED");
+            }
+
             throw new AuthException(500, "DATABASE_ERROR", error.message);
         }
 
         return mapTicketOrder(data);
+    }
+
+    // Releases the seats of an order that was never paid.
+    async cancelOrderTickets(orderId: string) {
+        const { error } = await this.supabase
+            .from(TICKETS_TABLE)
+            .update({ status: "cancelled" })
+            .eq("order_id", orderId)
+            .eq("status", "valid");
+
+        if (error) {
+            throw new AuthException(500, "DATABASE_ERROR", error.message);
+        }
     }
 
     async createPendingOrderTickets(input: {
@@ -194,7 +214,7 @@ export class TicketSalesRepository {
         return data ? mapTicketOrder(data) : null;
     }
 
-    async updateOrderStatus(orderId: string, status: "pending" | "paid" | "refunded") {
+    async updateOrderStatus(orderId: string, status: "pending" | "paid" | "refunded" | "cancelled") {
         const { data, error } = await this.supabase
             .from(TICKET_ORDERS_TABLE)
             .update({ status })

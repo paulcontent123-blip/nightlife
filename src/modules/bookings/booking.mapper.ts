@@ -16,6 +16,8 @@ export function mapBooking(row: BookingRow) {
             paid: row.deposit_paid,
         },
         payment_ref: row.payment_ref,
+        payment_method: row.payment_method ?? null,
+        payment_claimed_at: row.payment_claimed_at ?? null,
         confirmed_at: row.confirmed_at,
         cancelled_at: row.cancelled_at,
         reminder_push_sent_at: row.reminder_push_sent_at,

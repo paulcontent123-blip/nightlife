@@ -3,7 +3,7 @@ import { z } from "zod";
 export const PurchaseTicketSchema = z.object({
     tier_id: z.string().uuid(),
     quantity: z.number().int().min(1).max(10),
-    payment_method: z.enum(["vnpay", "momo"]),
+    payment_method: z.enum(["vnpay", "momo", "bank_transfer"]),
 });
 
 export const TicketListQuerySchema = z.object({

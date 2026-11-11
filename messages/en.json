@@ -219,6 +219,7 @@
     "transactionCode": "Transaction code",
     "loginToSubscribe": "Sign in to subscribe",
     "pendingReason": "You already have a subscription awaiting processing",
+    "viewBankTransfer": "View bank transfer details",
     "allVenues": "Book at all venues",
     "viewDeals": "View Happy Hour deals",
     "priorityHours": "Book up to {hours} hours earlier",

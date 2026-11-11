@@ -6,6 +6,7 @@ const STATUS_TONE: Record<TicketStatus, "amber" | "cyan" | "green" | "gray" | "r
     valid: "green",
     used: "gray",
     refunded: "red",
+    cancelled: "gray",
 };
 
 export function TicketStatusBadge({ status }: { status: TicketStatus }) {

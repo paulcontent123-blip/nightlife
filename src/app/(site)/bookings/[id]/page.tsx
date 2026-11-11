@@ -7,8 +7,9 @@ import type { Booking } from "@/lib/api/types";
 import { BookingStatusBadge } from "@/components/bookings/BookingStatusBadge";
 import { CancelBookingButton } from "@/components/bookings/CancelBookingButton";
 import { Alert } from "@/components/ui/Alert";
+import { LinkButton } from "@/components/ui/LinkButton";
 import { RealtimeRefresh } from "@/components/realtime/RealtimeRefresh";
-import { formatDate, formatVnd } from "@/lib/format";
+import { formatDate, formatVnd, PAYMENT_METHOD_LABEL } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Chi tiết đặt bàn · Nightlife.vn" };
 
@@ -40,6 +41,10 @@ function statusMessage(booking: Booking) {
         return { tone: "error" as const, text: "Đặt bàn được ghi nhận là không đến." };
     }
 
+    if (booking.deposit.amount > 0 && !booking.deposit.paid && booking.payment_method === "bank_transfer" && booking.payment_claimed_at) {
+        return { tone: "info" as const, text: "Bạn đã báo chuyển khoản tiền cọc. Admin đang đối soát và sẽ xác nhận đặt bàn." };
+    }
+
     if (booking.deposit.amount > 0 && !booking.deposit.paid) {
         return { tone: "info" as const, text: "Đặt bàn đang chờ thanh toán đặt cọc." };
     }
@@ -69,6 +74,10 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
     }
 
     const message = statusMessage(booking);
+    const awaitingBankTransfer = booking.status === "pending"
+        && booking.payment_method === "bank_transfer"
+        && booking.deposit.amount > 0
+        && !booking.deposit.paid;
 
     return (
         <div className="mx-auto max-w-2xl px-5 py-16 sm:px-10">
@@ -115,13 +124,27 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
                             <Row label="Trạng thái cọc" value={booking.deposit.paid ? "Đã thanh toán" : "Chưa thanh toán"} />
                         </>
                     )}
-                    {booking.payment_method && <Row label="Hình thức thanh toán" value={booking.payment_method} />}
+                    {booking.payment_method && (
+                        <Row label="Hình thức thanh toán" value={PAYMENT_METHOD_LABEL[booking.payment_method] ?? booking.payment_method} />
+                    )}
                     <Row label="Ngày tạo" value={new Date(booking.created_at).toLocaleString("vi-VN")} />
                 </div>
 
                 <div className="my-5 h-px bg-border" />
 
                 <Alert tone={message.tone}>{message.text}</Alert>
+
+                {awaitingBankTransfer && booking.payment_ref && (
+                    <div className="mt-5">
+                        <LinkButton
+                            href={`/chuyen-khoan?${new URLSearchParams({ purpose: "booking", ref: booking.payment_ref }).toString()}`}
+                            className="w-full"
+                            prefetch={false}
+                        >
+                            {booking.payment_claimed_at ? "Xem lại thông tin chuyển khoản" : "Chuyển khoản tiền cọc (QR)"}
+                        </LinkButton>
+                    </div>
+                )}
 
                 {CANCELLABLE.includes(booking.status) && (
                     <div className="mt-5">

@@ -19,7 +19,7 @@ export function MembershipSubscribeButton({
 }) {
     const t = useTranslations("Membership");
     const [expanded, setExpanded] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<"vnpay" | "momo">("vnpay");
+    const [paymentMethod, setPaymentMethod] = useState<"vnpay" | "momo" | "bank_transfer">("vnpay");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -61,6 +61,7 @@ export function MembershipSubscribeButton({
             <Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as typeof paymentMethod)}>
                 <option value="vnpay">VNPay</option>
                 <option value="momo">MoMo</option>
+                <option value="bank_transfer">Chuyển khoản QR</option>
             </Select>
             {error && <Alert>{error}</Alert>}
             <Button type="button" onClick={handleSubscribe} disabled={loading} className="w-full">

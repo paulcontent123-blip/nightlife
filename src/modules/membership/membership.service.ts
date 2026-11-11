@@ -7,6 +7,11 @@ import {
 import { createSiteUrl } from "@/config/site";
 import { AuthException } from "@/modules/auth/auth.errors";
 import type { UserProfile } from "@/modules/auth/auth.types";
+import {
+    createBankTransferPaymentUrlPath,
+    createBankTransferRef,
+} from "@/modules/bank-transfer/bank-transfer.reference";
+import { PaymentAccountRepository } from "@/modules/bank-transfer/payment-account.repository";
 import type { PaymentIpnDTO, PaymentProvider } from "@/modules/payments/payment.types";
 import { MEMBERSHIP_TIERS } from "./membership.constants";
 import { MembershipRepository } from "./membership.repository";
@@ -23,7 +28,8 @@ import type {
 
 export class MembershipService {
     constructor(
-        private repository = new MembershipRepository()
+        private repository = new MembershipRepository(),
+        private paymentAccountRepository = new PaymentAccountRepository()
     ) { }
 
     listTiers() {
@@ -76,13 +82,19 @@ export class MembershipService {
             );
         }
 
+        if (dto.payment_method === "bank_transfer" && !(await this.paymentAccountRepository.findActive())) {
+            throw new AuthException(503, "BANK_TRANSFER_NOT_CONFIGURED");
+        }
+
         const subscription = await this.repository.createSubscription({
             user_id: user.id,
             tier: dto.tier,
             amount: tier.price_vnd,
             status: "pending_payment",
             payment_method: dto.payment_method,
-            payment_ref: this.createPaymentRef(dto.payment_method, dto.tier),
+            payment_ref: dto.payment_method === "bank_transfer"
+                ? createBankTransferRef("membership")
+                : this.createPaymentRef(dto.payment_method, dto.tier),
             auto_renewal: true,
         });
 
@@ -94,6 +106,11 @@ export class MembershipService {
 
         if (!subscription) {
             throw new AuthException(404, "PAYMENT_NOT_FOUND");
+        }
+
+        // Bank transfers are only ever confirmed by an admin, never by an IPN.
+        if (subscription.payment_method === "bank_transfer") {
+            throw new AuthException(409, "PAYMENT_METHOD_MISMATCH");
         }
 
         if (input.membership_subscription_id && subscription.id !== input.membership_subscription_id) {
@@ -200,6 +217,82 @@ export class MembershipService {
         });
     }
 
+    async getBankTransferSubscription(paymentRef: string, user: UserProfile) {
+        const subscription = await this.repository.findSubscriptionByPaymentRef(paymentRef);
+
+        if (
+            !subscription
+            || subscription.payment_method !== "bank_transfer"
+            || (subscription.user_id !== user.id && user.role !== "admin")
+        ) {
+            throw new AuthException(404, "BANK_TRANSFER_NOT_FOUND");
+        }
+
+        return subscription;
+    }
+
+    // User reports the transfer; membership stays inactive until an admin
+    // reconciles the bank statement and confirms.
+    async claimBankTransfer(paymentRef: string, user: UserProfile) {
+        const subscription = await this.getBankTransferSubscription(paymentRef, user);
+
+        if (subscription.status === "payment_received") {
+            return subscription;
+        }
+
+        if (subscription.status !== "pending_payment") {
+            throw new AuthException(409, "BANK_TRANSFER_INVALID_STATUS");
+        }
+
+        return this.repository.updateSubscription(subscription.id, {
+            status: "payment_received",
+            payment_claimed_at: new Date().toISOString(),
+        });
+    }
+
+    // Admin found the money (possibly before the user pressed the button).
+    async markBankTransferReceived(subscriptionId: string) {
+        const subscription = await this.getBankTransferSubscriptionById(subscriptionId);
+
+        if (subscription.status === "payment_received") {
+            return subscription;
+        }
+
+        if (subscription.status !== "pending_payment") {
+            throw new AuthException(409, "BANK_TRANSFER_INVALID_STATUS");
+        }
+
+        return this.repository.updateSubscription(subscription.id, {
+            status: "payment_received",
+            payment_claimed_at: subscription.payment_claimed_at ?? new Date().toISOString(),
+        });
+    }
+
+    // Admin could not find the transfer: back to "waiting for payment" so the
+    // user can check the transfer content and report again.
+    async resetBankTransferClaim(subscriptionId: string) {
+        const subscription = await this.getBankTransferSubscriptionById(subscriptionId);
+
+        if (subscription.status !== "payment_received" && subscription.status !== "pending_payment") {
+            throw new AuthException(409, "BANK_TRANSFER_INVALID_STATUS");
+        }
+
+        return this.repository.updateSubscription(subscription.id, {
+            status: "pending_payment",
+            payment_claimed_at: null,
+        });
+    }
+
+    private async getBankTransferSubscriptionById(subscriptionId: string) {
+        const subscription = await this.repository.findSubscriptionById(subscriptionId);
+
+        if (!subscription || subscription.payment_method !== "bank_transfer") {
+            throw new AuthException(404, "BANK_TRANSFER_NOT_FOUND");
+        }
+
+        return subscription;
+    }
+
     async cancelAutoRenewal(userId: string) {
         const subscription = await this.repository.findLatestSubscriptionByStatuses(userId, ["active"]);
 
@@ -222,6 +315,25 @@ export class MembershipService {
         paymentMethod: MembershipPaymentMethod,
         reused: boolean
     ) {
+        if (paymentMethod === "bank_transfer") {
+            return {
+                subscription,
+                payment: {
+                    provider: paymentMethod,
+                    mode: "manual" as const,
+                    purpose: "membership",
+                    amount: subscription.amount,
+                    payment_ref: subscription.payment_ref,
+                    payment_url: createSiteUrl(
+                        createBankTransferPaymentUrlPath("membership", subscription.payment_ref)
+                    ).toString(),
+                    note: "Transfer via VietQR, then report the transfer. An admin reconciles it before activation.",
+                },
+                reused_pending_subscription: reused,
+                next_step: "Transfer the exact amount with the given content, then press \"I have transferred\".",
+            };
+        }
+
         const mode = this.resolveProviderMode(paymentMethod);
 
         return {
@@ -248,7 +360,7 @@ export class MembershipService {
         };
     }
 
-    private resolveProviderMode(provider: MembershipPaymentMethod) {
+    private resolveProviderMode(provider: Exclude<MembershipPaymentMethod, "bank_transfer">) {
         if (paymentConfig.mode === "mock") {
             return "mock";
         }
@@ -260,12 +372,12 @@ export class MembershipService {
         return hasCredentials ? paymentConfig.mode : "mock";
     }
 
-    private createPaymentRef(provider: MembershipPaymentMethod, tier: PaidMembershipTierKey) {
+    private createPaymentRef(provider: Exclude<MembershipPaymentMethod, "bank_transfer">, tier: PaidMembershipTierKey) {
         return `MOCK_${provider.toUpperCase()}_MEMBERSHIP_${tier.toUpperCase()}_${randomBytes(4).toString("hex").toUpperCase()}`;
     }
 
     private createMockPaymentUrl(
-        provider: MembershipPaymentMethod,
+        provider: Exclude<MembershipPaymentMethod, "bank_transfer">,
         subscriptionId: string,
         tier: PaidMembershipTierKey,
         paymentRef: string,

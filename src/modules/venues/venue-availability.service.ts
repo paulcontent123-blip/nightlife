@@ -190,7 +190,7 @@ function createAvailabilitySlots(
     openHours: Record<string, string> | null | undefined,
     date: string
 ) {
-    const dayKey = DAY_KEYS[readDateInVietnamTimezone(date).getDay()];
+    const dayKey = DAY_KEYS[readDayOfWeek(date)];
     const schedule = openHours?.[dayKey];
 
     if (!schedule) {
@@ -242,8 +242,10 @@ function formatTimeSlot(totalMinutes: number) {
     return `${hours}:${minutes}`;
 }
 
-function readDateInVietnamTimezone(date: string) {
-    return new Date(`${date}T00:00:00+07:00`);
+// The weekday of a calendar date (YYYY-MM-DD) is timezone-independent; read it
+// in UTC so the result does not depend on the server's TZ.
+function readDayOfWeek(date: string) {
+    return new Date(`${date}T00:00:00Z`).getUTCDay();
 }
 
 function createGuaranteedVipAvailability(input: {
