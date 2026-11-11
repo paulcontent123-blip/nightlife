@@ -9,10 +9,9 @@ import { Button } from "@/components/ui/Button";
 import { FieldGroup, Input, Select, Textarea } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
 import { VenueLocationPicker } from "@/components/admin/VenueLocationPicker";
-import { VENUE_TYPE_LABEL } from "@/lib/format";
+import { PRICE_RANGE_SPEND_LABEL, PRICE_RANGES, VENUE_TYPE_LABEL } from "@/lib/format";
 
 const VENUE_TYPES = Object.keys(VENUE_TYPE_LABEL);
-const PRICE_RANGES = ["$", "$$", "$$$", "$$$$"];
 const CITIES = [
     { value: "hcm", label: "TP.HCM" },
     { value: "hanoi", label: "Hà Nội" },
@@ -219,11 +218,11 @@ export function VenueForm({ mode, venueId, initialVenue }: { mode: "create" | "e
                     <FieldGroup label="Cover charge (VND)">
                         <Input type="number" min={0} value={form.cover_charge} onChange={(event) => update("cover_charge", event.target.value)} />
                     </FieldGroup>
-                    <FieldGroup label="Mức giá">
+                    <FieldGroup label="Mức giá (chi tiêu ước tính / người)">
                         <Select value={form.price_range} onChange={(event) => update("price_range", event.target.value)}>
                             {PRICE_RANGES.map((range) => (
                                 <option key={range} value={range}>
-                                    {range}
+                                    {PRICE_RANGE_SPEND_LABEL[range]}
                                 </option>
                             ))}
                         </Select>

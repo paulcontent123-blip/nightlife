@@ -13,7 +13,7 @@ import { VenueUpcomingEvents } from "@/components/venues/VenueUpcomingEvents";
 import { VenueForumDiscussion } from "@/components/venues/VenueForumDiscussion";
 import { VenueLocationMap } from "@/components/venues/VenueLocationMap";
 import { WriteVenueReviewSection } from "@/components/venues/WriteVenueReviewSection";
-import { formatVnd, VENUE_TYPE_EMOJI, VENUE_TYPE_LABEL } from "@/lib/format";
+import { formatPriceRange, formatVnd, VENUE_TYPE_EMOJI, VENUE_TYPE_LABEL } from "@/lib/format";
 
 interface VenuePageProps {
     params: Promise<{ slug: string }>;
@@ -91,7 +91,9 @@ export default async function VenueDetailPage({ params }: VenuePageProps) {
                             ⭐ {venue.metrics.avg_rating ? venue.metrics.avg_rating.toFixed(1) : "Mới"}
                             <span className="text-muted">({venue.metrics.total_reviews} đánh giá)</span>
                         </span>
-                        <span className="text-white">{venue.pricing.price_range}</span>
+                        <span className="text-white" title="Mức giá theo chi tiêu ước tính mỗi người">
+                            {formatPriceRange(venue.pricing.price_range)}
+                        </span>
                         <span className="text-muted">
                             {venue.pricing.cover_charge > 0 ? `Cover: ${formatVnd(venue.pricing.cover_charge)}` : "Miễn phí vào cửa"}
                         </span>

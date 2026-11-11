@@ -5,9 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { FieldGroup, Input, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
-import { CITY_LABEL } from "@/lib/format";
-
-const PRICE_RANGES = ["$", "$$", "$$$", "$$$$"];
+import { CITY_LABEL, formatPriceRangeCompact, PRICE_RANGES } from "@/lib/format";
 
 export function BarTourSearchForm() {
     const t = useTranslations("BarTour");
@@ -63,7 +61,7 @@ export function BarTourSearchForm() {
                         <option value="">{commonT("all")}</option>
                         {PRICE_RANGES.map((price) => (
                             <option key={price} value={price}>
-                                {price}
+                                {formatPriceRangeCompact(price)}
                             </option>
                         ))}
                     </Select>

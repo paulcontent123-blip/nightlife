@@ -62,6 +62,38 @@ export const TICKET_STATUS_LABEL: Record<string, string> = {
     cancelled: "Đã huỷ",
 };
 
+// Venue price tiers by estimated spend per person. The stored / filter value
+// stays "$" … "$$$$" (venues.price_range); only the spend range is shown to
+// people. Single source of truth for every place that shows price_range.
+export const PRICE_RANGES = ["$", "$$", "$$$", "$$$$"] as const;
+
+export const PRICE_RANGE_SPEND_LABEL: Record<string, string> = {
+    "$": "Dưới 200.000đ",
+    "$$": "200.000 – 500.000đ",
+    "$$$": "500.000 – 1.500.000đ",
+    "$$$$": "Trên 1.500.000đ",
+};
+
+// Language-neutral variant for translated pages (vi / en / zh).
+export const PRICE_RANGE_SPEND_COMPACT: Record<string, string> = {
+    "$": "< 200k ₫",
+    "$$": "200k–500k ₫",
+    "$$$": "500k–1.5M ₫",
+    "$$$$": "> 1.5M ₫",
+};
+
+// "200.000 – 500.000đ/người"
+export function formatPriceRange(range: string) {
+    const spend = PRICE_RANGE_SPEND_LABEL[range];
+
+    return spend ? `${spend}/người` : range;
+}
+
+// "200k–500k ₫"
+export function formatPriceRangeCompact(range: string) {
+    return PRICE_RANGE_SPEND_COMPACT[range] ?? range;
+}
+
 export const PAYMENT_METHOD_LABEL: Record<string, string> = {
     cash: "Tiền mặt tại quầy",
     vnpay: "VNPay",

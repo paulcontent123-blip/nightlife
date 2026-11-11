@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { BarTourVenueSuggestion } from "@/lib/api/types";
 import { Badge } from "@/components/ui/Badge";
-import { VENUE_TYPE_EMOJI, VENUE_TYPE_LABEL } from "@/lib/format";
+import { formatPriceRangeCompact, VENUE_TYPE_EMOJI, VENUE_TYPE_LABEL } from "@/lib/format";
 
 export function BarTourVenueCard({
     suggestion,
@@ -36,7 +36,7 @@ export function BarTourVenueCard({
             <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="text-amber">&#x2B50; {suggestion.rating ? suggestion.rating.toFixed(1) : newLabel}</span>
                 <span className="text-muted">· {suggestion.total_reviews} {reviewsLabel}</span>
-                <span className="text-white">{suggestion.price_range}</span>
+                <span className="text-white">{formatPriceRangeCompact(suggestion.price_range)}</span>
             </div>
 
             {(suggestion.deals.length > 0 || suggestion.events.length > 0) && (
