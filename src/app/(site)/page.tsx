@@ -25,7 +25,7 @@ export default async function HomePage() {
                 <div className="min-w-0 px-5 py-16 sm:px-10 sm:py-24 lg:py-28">
                     <div className="min-w-0 max-w-3xl">
                         <p className="mb-5 flex items-center gap-2 font-display text-[11px] font-bold uppercase tracking-[2px] text-amber">
-                            <span className="h-px w-5 bg-amber" />
+                            <span className="h-px w-2 shrink-0 bg-amber" />
                             {t("eyebrow")}
                         </p>
                         <h1 className="mb-4 break-words font-display text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl">
