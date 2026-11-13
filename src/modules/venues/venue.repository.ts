@@ -84,7 +84,7 @@ export class VenueRepository {
         let request = this.supabase
             .from(VENUES_TABLE)
             // "planned" count is a Postgres statistics estimate, not a real row
-            // count — confirmed to drift after bulk seeding (see forum/event/
+            // count - confirmed to drift after bulk seeding (see forum/event/
             // article repositories), so use "exact" for both branches.
             .select(VENUE_LIST_COLUMNS, { count: "exact" });
 

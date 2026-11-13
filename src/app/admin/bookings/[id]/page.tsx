@@ -52,7 +52,7 @@ export default async function AdminBookingDetailPage({ params }: PageProps) {
                 <div className="flex flex-col gap-2 text-sm">
                     <Row label="Mã đặt bàn" value={booking.id} mono />
                     <Row label="Venue" value={booking.venue_id} mono link={`/admin/venues/${booking.venue_id}`} />
-                    <Row label="Bàn" value={booking.table_id ?? "—"} mono />
+                    <Row label="Bàn" value={booking.table_id ?? "-"} mono />
                     <Row label="Khách hàng (user_id)" value={booking.user_id} mono />
                     <Row label="Ngày giờ" value={`${formatDate(booking.booking_date)} · ${booking.booking_time}`} />
                     <Row label="Số khách" value={String(booking.party_size)} />

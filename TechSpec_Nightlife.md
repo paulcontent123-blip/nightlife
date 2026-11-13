@@ -1,4 +1,4 @@
-# Nightlife.com.vn — Technical Specification
+# Nightlife.com.vn - Technical Specification
 **Version:** 1.0 | **Date:** 2026 | **Stack:** Next.js 15 + Supabase + Redis + WebSocket
 
 ---
@@ -518,7 +518,7 @@ Redeem rewards:
 ## 5. REALTIME FEATURES (Supabase Realtime)
 
 ```javascript
-// 1. Live venue availability — cập nhật khi có booking mới
+// 1. Live venue availability - cập nhật khi có booking mới
 supabase
   .channel('venue-availability')
   .on('postgres_changes', {
@@ -530,7 +530,7 @@ supabase
     // Update available tables count on UI
   })
 
-// 2. Squad real-time updates — member join/leave
+// 2. Squad real-time updates - member join/leave
 supabase
   .channel(`squad-${squadId}`)
   .on('postgres_changes', {
@@ -643,9 +643,9 @@ Membership expiring   → Email (7 ngày trước)
 ## 10. INFRASTRUCTURE
 
 ```
-Frontend:     Vercel (Next.js) — Vietnam Edge Network
-Database:     Supabase Pro — Singapore region
-Cache:        Upstash Redis — Singapore region
+Frontend:     Vercel (Next.js) - Vietnam Edge Network
+Database:     Supabase Pro - Singapore region
+Cache:        Upstash Redis - Singapore region
 Images:       Cloudinary
 Push:         Firebase Cloud Messaging (FCM)
 Email:        Resend

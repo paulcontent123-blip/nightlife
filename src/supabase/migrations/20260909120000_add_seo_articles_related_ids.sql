@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration: SEO Articles — related articles
+-- Migration: SEO Articles - related articles
 -- Description: Lets an admin manually curate which other articles show in
 -- the "Bài viết liên quan" section on an article's detail page, instead of
 -- always relying on the automatic same-category suggestion.

@@ -31,7 +31,7 @@ export function ForumReportActions({ reportId, status }: { reportId: string; sta
     }
 
     if (status !== "open") {
-        return <span className="text-xs text-muted">—</span>;
+        return <span className="text-xs text-muted">-</span>;
     }
 
     return (

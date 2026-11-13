@@ -100,7 +100,7 @@ export default async function AdminVenuesPage({ searchParams }: PageProps) {
                                             </div>
                                         </td>
                                         <td className="whitespace-nowrap px-4 py-2.5 text-muted">
-                                            {venue.metrics.avg_rating ? `⭐ ${venue.metrics.avg_rating.toFixed(1)}` : "—"}
+                                            {venue.metrics.avg_rating ? `⭐ ${venue.metrics.avg_rating.toFixed(1)}` : "-"}
                                         </td>
                                         <td className="whitespace-nowrap px-4 py-2.5 text-right">
                                             <Link href={`/admin/venues/${venue.id}`} className="font-semibold text-amber">

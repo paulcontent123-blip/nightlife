@@ -59,7 +59,7 @@ export class ArticleRepository {
     async listPublic(query: ArticleListQuery) {
         // See event.repository.ts / forum.repository.ts: "planned" count is a
         // Postgres statistics estimate, not a real row count, and can drift
-        // badly after bulk seeding — use "exact" for correct pagination.
+        // badly after bulk seeding - use "exact" for correct pagination.
         let request = this.createListQuery(query, ARTICLE_LIST_COLUMNS, "exact")
             .eq("status", "published")
             .not("published_at", "is", null)

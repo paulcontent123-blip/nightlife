@@ -114,7 +114,7 @@ export default async function AdminPassportPage({ searchParams }: PageProps) {
                                             <td className="whitespace-nowrap px-4 py-2.5">
                                                 {PASSPORT_SOURCE_LABEL[transaction.source_type] ?? transaction.source_type}
                                             </td>
-                                            <td className="px-4 py-2.5 text-muted">{transaction.description ?? "—"}</td>
+                                            <td className="px-4 py-2.5 text-muted">{transaction.description ?? "-"}</td>
                                             <td
                                                 className={[
                                                     "whitespace-nowrap px-4 py-2.5 font-semibold",

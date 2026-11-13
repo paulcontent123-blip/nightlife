@@ -98,7 +98,7 @@ export default async function AdminTicketOrdersPage({ searchParams }: PageProps)
                                         <td className="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-muted">{order.id.slice(0, 8)}</td>
                                         <td className="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-muted">{order.event_id.slice(0, 8)}</td>
                                         <td className="whitespace-nowrap px-4 py-2.5">{formatVnd(order.total_amount)}</td>
-                                        <td className="whitespace-nowrap px-4 py-2.5 text-muted">{order.payment_method ?? "—"}</td>
+                                        <td className="whitespace-nowrap px-4 py-2.5 text-muted">{order.payment_method ?? "-"}</td>
                                         <td className="whitespace-nowrap px-4 py-2.5">
                                             <Badge tone={STATUS_TONE[order.status] ?? "gray"}>
                                                 {TICKET_ORDER_STATUS_LABEL[order.status] ?? order.status}

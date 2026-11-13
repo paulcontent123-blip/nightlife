@@ -23,7 +23,7 @@ export default async function EditVenuePage({ params }: PageProps) {
     let events: Event[] = [];
 
     try {
-        // Independent of one another — all three only need venueId, so fetch
+        // Independent of one another - all three only need venueId, so fetch
         // them concurrently instead of waiting on venue before starting the rest.
         const [venueResult, tablesResult, eventsResult] = await Promise.all([
             serverFetch<Venue>(`/api/v1/admin/venues/${venueId}`),

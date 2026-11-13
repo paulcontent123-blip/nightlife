@@ -11,14 +11,14 @@ const REQUEST_TYPES = [
         id: "booking",
         icon: "🍽️",
         title: "Đặt bàn ngay",
-        description: "Chọn venue, ngày giờ và số người — xác nhận trong 5 phút",
+        description: "Chọn venue, ngày giờ và số người - xác nhận trong 5 phút",
         optionLabel: "Đặt bàn nhóm lớn (10+)",
     },
     {
         id: "corporate",
         icon: "🏢",
         title: "Corporate Event",
-        description: "Team building, year-end party, client dinner — chúng tôi lo toàn bộ",
+        description: "Team building, year-end party, client dinner - chúng tôi lo toàn bộ",
         optionLabel: "Corporate Event",
     },
     {
@@ -32,7 +32,7 @@ const REQUEST_TYPES = [
         id: "advertising",
         icon: "📡",
         title: "Advertising & Partnership",
-        description: "Brand muốn tiếp cận cộng đồng nightlife — content, events, ads",
+        description: "Brand muốn tiếp cận cộng đồng nightlife - content, events, ads",
         optionLabel: "Advertising & Partnership",
     },
 ];
@@ -47,7 +47,7 @@ export default function LienHePage() {
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
-        // No backend wired yet for this flow — the tech lead hasn't confirmed
+        // No backend wired yet for this flow - the tech lead hasn't confirmed
         // where these requests should be routed. This is UI-only for now.
         setSubmitted(true);
     }

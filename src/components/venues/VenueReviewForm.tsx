@@ -112,7 +112,7 @@ export function VenueReviewForm({ slug, bookings }: { slug: string; bookings: El
                                 setter(event.target.value);
                             }}
                         >
-                            <option value="">—</option>
+                            <option value="">-</option>
                             {[1, 2, 3, 4, 5].map((value) => (
                                 <option key={value} value={value}>
                                     {value} sao

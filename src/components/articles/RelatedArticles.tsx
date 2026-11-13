@@ -17,7 +17,7 @@ export async function RelatedArticles({ articleId, category, relatedArticleIds }
     try {
         // Admin-curated picks take priority; only fall back to an automatic
         // same-category suggestion when nothing has been picked (or the picks
-        // no longer resolve — e.g. an article got unpublished since).
+        // no longer resolve - e.g. an article got unpublished since).
         if (relatedArticleIds.length > 0) {
             items = await articleListService.listPublicArticlesByIds(relatedArticleIds);
         }

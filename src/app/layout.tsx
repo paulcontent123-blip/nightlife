@@ -37,7 +37,7 @@ export default async function RootLayout({
           rel="stylesheet"
         />
         {/* Runs before paint so a saved light-mode preference applies
-            immediately — without this the page would flash dark first. */}
+            immediately - without this the page would flash dark first. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `try{if(localStorage.getItem("nightlife-theme")==="light"){document.documentElement.setAttribute("data-theme","light")}}catch(e){}`,

@@ -130,7 +130,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
                                             </Badge>
                                         </td>
                                         <td className="whitespace-nowrap px-4 py-3 text-muted">
-                                            {article.published_at ? new Date(article.published_at).toLocaleString("vi-VN") : "—"}
+                                            {article.published_at ? new Date(article.published_at).toLocaleString("vi-VN") : "-"}
                                         </td>
                                         <td className="whitespace-nowrap px-4 py-3 text-muted">{article.view_count}</td>
                                         <td className="whitespace-nowrap px-4 py-3 text-right">

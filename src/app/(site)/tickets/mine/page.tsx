@@ -48,7 +48,7 @@ export default async function MyTicketsPage({ searchParams }: PageProps) {
                 <div className="mt-6">
                     <Alert tone="success">
                         Thanh toán mô phỏng thành công. Đơn vé <span className="font-mono">#{orderId.slice(0, 8)}</span> đang chờ admin xác nhận
-                        — vé thật sẽ xuất hiện ở đây sau khi được duyệt.
+                        - vé thật sẽ xuất hiện ở đây sau khi được duyệt.
                     </Alert>
                 </div>
             )}

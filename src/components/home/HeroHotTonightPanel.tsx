@@ -12,7 +12,7 @@ interface HotTonightItem {
     price: string;
 }
 
-// Static illustrative content — not wired to live venue data yet.
+// Static illustrative content - not wired to live venue data yet.
 const HOT_TONIGHT: HotTonightItem[] = [
     { icon: "🥃", name: "Observatory Saigon", meta: "Rooftop Bar · Q1 · ⭐ 4.9", status: "available", statusTone: "pink", price: "Cover: 200k" },
     { icon: "🎵", name: "Lush Nightclub", meta: "Club · Q1 · ⭐ 4.8", status: "busy", statusTone: "pink", price: "Cover: 300k" },

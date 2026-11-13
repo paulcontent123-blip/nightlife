@@ -101,7 +101,7 @@ export function MockPaymentPanel() {
                 <Row label="Mã giao dịch" value={paymentRef} mono />
                 {purpose === "booking" && <Row label="Mã đặt bàn" value={bookingId} mono />}
                 {purpose === "ticket_order" && <Row label="Loại giao dịch" value="Mua vé sự kiện" />}
-                {purpose === "membership" && <Row label="Gói thành viên" value={tier || "—"} />}
+                {purpose === "membership" && <Row label="Gói thành viên" value={tier || "-"} />}
             </div>
 
             <p className="mb-5 text-xs leading-relaxed text-muted">

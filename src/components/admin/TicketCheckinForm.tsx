@@ -63,7 +63,7 @@ export function TicketCheckinForm() {
                         <span className="font-mono text-xs text-muted">{result.ticket_code}</span>
                     </div>
                     <p className="text-sm text-emerald-400">
-                        ✓ Check-in thành công lúc {result.checked_in_at ? new Date(result.checked_in_at).toLocaleString("vi-VN") : "—"}
+                        ✓ Check-in thành công lúc {result.checked_in_at ? new Date(result.checked_in_at).toLocaleString("vi-VN") : "-"}
                     </p>
                 </div>
             )}

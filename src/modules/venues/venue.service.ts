@@ -180,7 +180,7 @@ export class VenueService {
 
     //lấy chi tiết venue public theo slug, bao gồm thông tin venue, bàn, chương trình khuyến mãi và đánh giá gần đây.
     // Cached (same invalidation counter as the venue list) since this is the
-    // highest-traffic public detail page — cuts a 2-round-trip Supabase read
+    // highest-traffic public detail page - cuts a 2-round-trip Supabase read
     // down to a single Redis round trip on a cache hit.
     async getPublicVenueDetailBySlug(slug: string, includeExclusiveDeals = false) {
         const cacheKey = this.createVenueDetailCacheKey(slug, includeExclusiveDeals);

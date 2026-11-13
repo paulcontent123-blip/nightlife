@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Dark palette (default — no [data-theme] attribute needed) */
+/* Dark palette (default - no [data-theme] attribute needed) */
 :root {
   --void: #06060a;
   --void-2: #0d0d14;
@@ -32,7 +32,7 @@
   --foreground: var(--white);
 }
 
-/* Light palette — activated by data-theme="light" on <html>, set by the
+/* Light palette - activated by data-theme="light" on <html>, set by the
    theme toggle (see ThemeToggle.tsx) and the anti-flash script in layout.tsx. */
 [data-theme="light"] {
   --void: #f6f5f1;

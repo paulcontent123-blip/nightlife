@@ -59,12 +59,12 @@ export default async function AdminPaymentsPage() {
                             <tbody>
                                 {queue.items.map((item) => (
                                     <tr key={`${item.purpose}-${item.id}`} className="border-t border-border">
-                                        <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[13px] text-amber">{item.payment_ref ?? "—"}</td>
+                                        <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[13px] text-amber">{item.payment_ref ?? "-"}</td>
                                         <td className="whitespace-nowrap px-4 py-2.5 font-semibold">{formatVnd(item.amount)}</td>
                                         <td className="whitespace-nowrap px-4 py-2.5">{PURPOSE_LABEL[item.purpose] ?? item.purpose}</td>
                                         <td className="min-w-48 px-4 py-2.5 text-muted">{item.description}</td>
                                         <td className="whitespace-nowrap px-4 py-2.5">
-                                            <div>{item.user.display_name ?? "—"}</div>
+                                            <div>{item.user.display_name ?? "-"}</div>
                                             <div className="text-xs text-muted">{item.user.email ?? item.user.id.slice(0, 8)}</div>
                                         </td>
                                         <td className="whitespace-nowrap px-4 py-2.5">

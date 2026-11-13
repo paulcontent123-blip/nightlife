@@ -76,7 +76,7 @@ export async function MembershipTierCard({
             <div className="mb-5 flex flex-1 flex-col gap-2">
                 {perkItems.map((perk) => (
                     <div key={perk.label} className={["flex items-start gap-2 text-[13px]", perk.included ? "text-white" : "text-muted-2"].join(" ")}>
-                        <span className={perk.included ? "text-amber" : "text-muted-2"}>{perk.included ? "✓" : "—"}</span>
+                        <span className={perk.included ? "text-amber" : "text-muted-2"}>{perk.included ? "✓" : "-"}</span>
                         {perk.label}
                     </div>
                 ))}

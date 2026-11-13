@@ -32,7 +32,7 @@ export function MembershipSubscriptionActions({ id, status }: { id: string; stat
     const canReject = status === "pending_payment" || status === "payment_received";
 
     if (!canConfirm && !canReject) {
-        return <span className="text-xs text-muted">—</span>;
+        return <span className="text-xs text-muted">-</span>;
     }
 
     return (

@@ -8,7 +8,7 @@ const STORAGE_KEY = "nightlife-theme";
 export function ThemeToggle({ className }: { className?: string }) {
     const t = useTranslations("Theme");
     // Starts null so the server-rendered markup and the first client render
-    // match exactly (avoids a hydration mismatch) — the real value is read
+    // match exactly (avoids a hydration mismatch) - the real value is read
     // from the DOM attribute the anti-flash script already set.
     const [isLight, setIsLight] = useState<boolean | null>(null);
 
@@ -25,7 +25,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         try {
             localStorage.setItem(STORAGE_KEY, next ? "light" : "dark");
         } catch {
-            // Private browsing / storage disabled — theme just won't persist.
+            // Private browsing / storage disabled - theme just won't persist.
         }
     }
 

@@ -26,7 +26,7 @@ export default async function MembershipPage({ searchParams }: PageProps) {
     const query = await searchParams;
     const paymentResult = typeof query.payment === "string" ? query.payment : undefined;
 
-    // Independent of one another — kick off both requests before awaiting either.
+    // Independent of one another - kick off both requests before awaiting either.
     const tiersPromise = serverFetch<MembershipTiersResult>("/api/v1/membership/tiers");
     const minePromise = serverFetch<MembershipMineResult>("/api/v1/membership/mine").catch((error) => {
         if (error instanceof ApiError && error.status === 401) {

@@ -48,10 +48,10 @@ export default async function PassportPage({ searchParams }: PageProps) {
                     <>
                         Đi chơi nhiều
                         <br />
-                        <em className="not-italic text-amber">— tích điểm nhiều</em>
+                        <em className="not-italic text-amber">- tích điểm nhiều</em>
                     </>
                 }
-                description="Check-in tại venue, đi sự kiện, viết đánh giá — mỗi hoạt động đều tích điểm để đổi phần thưởng."
+                description="Check-in tại venue, đi sự kiện, viết đánh giá - mỗi hoạt động đều tích điểm để đổi phần thưởng."
             />
 
             <div className="mt-6 rounded-xl border border-amber-border bg-amber-wash p-6 text-center">
@@ -98,7 +98,7 @@ export default async function PassportPage({ searchParams }: PageProps) {
                                             <td className="whitespace-nowrap px-4 py-2.5 text-white">
                                                 {PASSPORT_SOURCE_LABEL[transaction.source_type] ?? transaction.source_type}
                                             </td>
-                                            <td className="px-4 py-2.5 text-muted">{transaction.description ?? "—"}</td>
+                                            <td className="px-4 py-2.5 text-muted">{transaction.description ?? "-"}</td>
                                             <td className={["whitespace-nowrap px-4 py-2.5 font-semibold", transaction.points >= 0 ? "text-emerald-400" : "text-pink"].join(" ")}>
                                                 {transaction.points >= 0 ? `+${transaction.points}` : transaction.points}
                                             </td>

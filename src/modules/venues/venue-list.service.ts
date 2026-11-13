@@ -22,7 +22,7 @@ export class VenueListService {
         // One Redis round trip reads both the invalidation counter and the
         // cached payload; a cache hit is only valid when its stamped version
         // still matches the current counter (bumped by admin/booking/review
-        // mutations elsewhere), so this stays exact — no staleness window is
+        // mutations elsewhere), so this stays exact - no staleness window is
         // introduced versus the previous version-in-key-name approach.
         const { version, cached } = await this.readCache(cacheKey);
 

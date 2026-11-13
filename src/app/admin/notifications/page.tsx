@@ -20,7 +20,7 @@ export default async function AdminNotificationsPage() {
             <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
                 <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted">Firebase Cloud Messaging</p>
-                    <p className="mt-1 text-sm text-white">Project: {status.project_id ?? "—"}</p>
+                    <p className="mt-1 text-sm text-white">Project: {status.project_id ?? "-"}</p>
                 </div>
                 <Badge tone={status.configured ? "green" : "red"}>
                     {status.configured ? "✓ Đã cấu hình" : "Chưa cấu hình"}

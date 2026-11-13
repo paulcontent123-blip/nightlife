@@ -94,7 +94,7 @@ export default async function AdminForumReportsPage({ searchParams }: PageProps)
                                     {report.post ? (
                                         <div className="mt-2 rounded-lg border border-border-strong bg-void-3 p-3">
                                             <p className="text-xs font-semibold text-muted">Bài viết bị báo cáo:</p>
-                                            <p className="mt-0.5 line-clamp-2 text-sm text-white">{report.post.title} — {report.post.content}</p>
+                                            <p className="mt-0.5 line-clamp-2 text-sm text-white">{report.post.title} - {report.post.content}</p>
                                         </div>
                                     ) : (
                                         <p className="mt-2 text-xs text-muted">Bài viết đã bị xoá.</p>

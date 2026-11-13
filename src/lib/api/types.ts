@@ -1,5 +1,5 @@
 // Hand-written view-model types matching the JSON actually returned by the
-// API's *.mapper.ts functions (nested shapes) — NOT the internal DB-row
+// API's *.mapper.ts functions (nested shapes) - NOT the internal DB-row
 // `*.types.ts` interfaces, which are a different shape. Enums/DTOs that ARE
 // identical between the two are re-exported from the module type files below.
 
